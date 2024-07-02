@@ -1,181 +1,134 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Box,
-  Button,
-  useColorMode,
-  ChakraProvider,
-  Flex,
-  Spacer,
-  VStack,
-  Container, useToast, HStack,
-} from '@chakra-ui/react';
-import CardList from './components/CardList';
+import { ChakraProvider, Box, VStack, HStack, Flex } from '@chakra-ui/react';
 import ActionButtons from './components/ActionButtons';
+import CardList from './components/CardList';
 import Clock from './components/Clock';
 import DynamicBackground from './components/DynamicBackground';
-import {CardData} from "./components/Card";
-import { v4 as uuidv4 } from 'uuid';
-import WeatherCard from "./components/WeatherCard";
-import NewsCard from "./components/NewsCard";
+import NewsCard from './components/NewsCard';
+import WeatherCard from './components/WeatherCard';
+import TodoList from './components/TodoList';
+import QuoteGenerator from './components/QuoteGenerator'
+import MoodColorizer from './components/MoodColorizer'
+import PomodoroTimer from './components/PomodoroTimer'
+import Calculator from './components/Calculator'
+import NeuroNetVisualizer from './components/NeuroNetVisualizer';
+import MoodMusicMixer from './components/MoodMusicMixer';
+import ConfigurableIframeCard from './components/ConfigurableIframeCard'
+import InteractiveMindMap from "./components/InteractiveMindMap"
+interface CardData {
+  id: string;
+  title: string;
+  url: string;
+  favicon: string;
+}
 
-
-function App() {
+const App: React.FC = () => {
   const [cards, setCards] = useState<CardData[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
-  const { colorMode, toggleColorMode } = useColorMode();
-  const toast = useToast();
+
   useEffect(() => {
-    const savedCards = JSON.parse(localStorage.getItem('cards') || '[]') as CardData[];
-    setCards(savedCards);
+    const savedCards = localStorage.getItem('cards');
+    if (savedCards) {
+      setCards(JSON.parse(savedCards));
+    }
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem('cards', JSON.stringify(cards));
-  }, [cards]);
-
-  const onDragEnd = (id: string, newIndex: number) => {
-    setCards(prevCards => {
-      const newCards = Array.from(prevCards);
-      const draggedCardIndex = newCards.findIndex(card => card.id === id);
-      console.log(draggedCardIndex, newIndex);
-      if (draggedCardIndex === -1 || draggedCardIndex === newIndex) return prevCards;
-
-      const [draggedCard] = newCards.splice(draggedCardIndex, 1);
-      newCards.splice(newIndex, 0, draggedCard);
-
-      return newCards.filter(card => card !== undefined);
-    });
-  };
-  const addCard = async () => {
-    const url = prompt('Inserisci l\'URL del sito:');
-    if (url) {
-      try {
-        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-        const response = await fetch(proxyUrl);
-        const data = await response.json();
-
-        if (data.status.http_code !== 200) {
-          throw new Error('Errore nel recupero delle informazioni del sito');
-        }
-
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(data.contents, 'text/html');
-
-        const title = doc.querySelector('title')?.textContent ||
-            doc.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
-            'Sito sconosciuto';
-
-        let favicon = doc.querySelector('link[rel="icon"]')?.getAttribute('href') ||
-            doc.querySelector('link[rel="shortcut icon"]')?.getAttribute('href') ||
-            '/default-favicon.ico';
-
-        // Assicuriamoci che l'URL della favicon sia assoluto
-        if (favicon && !favicon.startsWith('http')) {
-          favicon = new URL(favicon, url).href;
-        }
-
-        const newCard: CardData = {
-          id: uuidv4(),
-          title,
-          url,
-          favicon
-        };
-
-        setCards(prevCards => [...prevCards, newCard]);
-
-        toast({
-          title: "Card aggiunta",
-          description: "La nuova card è stata aggiunta con successo.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-      } catch (error) {
-        console.error('Errore nell\'aggiunta della card:', error);
-        toast({
-          title: "Errore",
-          description: "Non è stato possibile aggiungere la card. Riprova più tardi.",
-          status: "error",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
-    }
+  const saveCards = (newCards: CardData[]) => {
+    setCards(newCards);
+    localStorage.setItem('cards', JSON.stringify(newCards));
   };
 
-
-  const updateCard = (id: string, newData: { title: string; url: string }) => {
-    setCards(prevCards =>
-        prevCards.map(card =>
-            card.id === id ? { ...card, ...newData } : card
-        )
-    );
+  const handleAddCard = () => {
+    const newCard: CardData = {
+      id: Date.now().toString(),
+      title: 'New Card',
+      url: 'https://example.com',
+      favicon: 'https://example.com/favicon.ico',
+    };
+    saveCards([...cards, newCard]);
   };
 
-  const toggleEditMode = () => setIsEditMode(!isEditMode);
-  const exportConfig = () => {
+  const handleExportConfig = () => {
     const config = JSON.stringify(cards);
     const blob = new Blob([config], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'home-config.json';
+    a.download = 'dashboard-config.json';
     a.click();
   };
 
-  const importConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e: ProgressEvent<FileReader>) => {
-      try {
-        const importedCards = JSON.parse(e.target?.result as string) as CardData[];
-        setCards(importedCards);
-      } catch (error) {
-        alert('Errore durante l\'importazione della configurazione');
-      }
-    };
-    reader.readAsText(file);
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        try {
+          const importedCards = JSON.parse(content);
+          saveCards(importedCards);
+        } catch (error) {
+          console.error('Error importing configuration:', error);
+        }
+      };
+      reader.readAsText(file);
+    }
   };
+
+  const handleDragEnd = (id: string, newIndex: number) => {
+    const newCards = Array.from(cards);
+    const [reorderedItem] = newCards.splice(cards.findIndex(card => card.id === id), 1);
+    newCards.splice(newIndex, 0, reorderedItem);
+    saveCards(newCards);
+  };
+
+  const handleUpdateCard = (id: string, newData: { title: string; url: string }) => {
+    const updatedCards = cards.map(card =>
+      card.id === id ? { ...card, ...newData } : card
+    );
+    saveCards(updatedCards);
+  };
+
   return (
-      <ChakraProvider>
-        <DynamicBackground />
-        <Container maxW="container.xl" p={5}>
-          <VStack spacing={4} align="stretch">
-            <Flex>
-              <Button onClick={toggleColorMode} size="sm">
-                Tema: {colorMode === "light" ? "Scuro" : "Chiaro"}
-              </Button>
-              <Spacer />
-              <Button onClick={toggleEditMode} size="sm" mr={2}>
-                {isEditMode ? "Modalità Navigazione" : "Modalità Modifica"}
-              </Button>
-              <ActionButtons
-                  onAddCard={addCard}
-                  onExportConfig={exportConfig}
-                  onImportConfig={importConfig}
-              />
-            </Flex>
-            <Box alignSelf="center">
-              <Clock />
-            </Box>
-            <HStack spacing={4} justify="center">
-              <WeatherCard />
-              <NewsCard />
-            </HStack>
-            <Box>
-              <CardList
-                  cards={cards}
-                  onDragEnd={onDragEnd}
-                  isEditMode={isEditMode}
-                  onUpdateCard={updateCard}
-              />
-            </Box>
-          </VStack>
-        </Container>
-      </ChakraProvider>
+    <ChakraProvider>
+      <DynamicBackground />
+      <Box p={4}>
+        <VStack spacing={4} align="stretch">
+          <HStack justify="space-between">
+            <Clock />
+            <ActionButtons
+              onAddCard={handleAddCard}
+              onExportConfig={handleExportConfig}
+              onImportConfig={handleImportConfig}
+            />
+          </HStack>
+          <Flex
+            flexWrap="wrap"
+            justifyContent={{ base: 'center', md: 'flex-start' }}
+            gap={4}
+          >
+            <WeatherCard />
+            <NewsCard />
+            <TodoList />
+            <QuoteGenerator />
+             <Calculator />
+            <PomodoroTimer />
+            <NeuroNetVisualizer />
+             <ConfigurableIframeCard />
+            <MoodMusicMixer />
+             <MoodColorizer />
+             <InteractiveMindMap />
+            <CardList
+              cards={cards}
+              onDragEnd={handleDragEnd}
+              isEditMode={isEditMode}
+              onUpdateCard={handleUpdateCard}
+            />
+          </Flex>
+        </VStack>
+      </Box>
+    </ChakraProvider>
   );
-}
+};
 
 export default App;
