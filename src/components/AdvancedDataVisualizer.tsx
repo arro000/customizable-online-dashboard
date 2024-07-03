@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Button, VStack, HStack, Text, Select, Input, Table, Thead, Tbody, Tr, Th, Td, useToast } from '@chakra-ui/react';
+import { Box,  VStack, HStack,  Select, Input, Table, Thead, Tbody, Tr, Th, Td, useToast } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Chart } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
