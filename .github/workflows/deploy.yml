@@ -23,7 +23,7 @@ jobs:
         with:
             github_token: ${{ secrets.GH_TOKEN }}
             publish_dir: ./dist
-            publish_branch: main
+            publish_branch: gh-pages
          
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}
