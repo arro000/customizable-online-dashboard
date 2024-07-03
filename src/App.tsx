@@ -15,6 +15,8 @@ import NeuroNetVisualizer from './components/NeuroNetVisualizer';
 import MoodMusicMixer from './components/MoodMusicMixer';
 import ConfigurableIframeCard from './components/ConfigurableIframeCard'
 import InteractiveMindMap from "./components/InteractiveMindMap"
+import DynamicDashboard from "./components/DynamicDashboard"
+import AdvancedDataVisualizer from "./components/AdvancedDataVisualizer"
 interface CardData {
   id: string;
   title: string;
@@ -110,6 +112,7 @@ const App: React.FC = () => {
             <WeatherCard />
             <NewsCard />
             <TodoList />
+            <AdvancedDataVisualizer />
             <QuoteGenerator />
              <Calculator />
             <PomodoroTimer />
@@ -117,6 +120,7 @@ const App: React.FC = () => {
              <ConfigurableIframeCard />
             <MoodMusicMixer />
              <MoodColorizer />
+             
              <InteractiveMindMap />
             <CardList
               cards={cards}
@@ -124,6 +128,7 @@ const App: React.FC = () => {
               isEditMode={isEditMode}
               onUpdateCard={handleUpdateCard}
             />
+            <DynamicDashboard></DynamicDashboard>
           </Flex>
         </VStack>
       </Box>

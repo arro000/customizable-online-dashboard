@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, Button, Input, VStack, HStack, Text, useToast } from '@chakra-ui/react';
+import { Box, Button, Input, VStack, HStack, Text, useToast, useMediaQuery } from '@chakra-ui/react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -25,6 +26,7 @@ const InteractiveMindMap: React.FC = () => {
   const [scale, setScale] = useState(1);
   const containerRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
+  const [isMobile] = useMediaQuery("(max-width: 768px)");
 
   const x = useMotionValue(0);
   const y = useMotionValue(0);
@@ -135,24 +137,46 @@ const InteractiveMindMap: React.FC = () => {
   };
 
   return (
-    <VStack spacing={4} align="stretch" w="100%" h="600px">
-      <HStack>
-        <Input
-          value={newNodeContent}
-          onChange={(e) => setNewNodeContent(e.target.value)}
-          placeholder="Contenuto del nuovo nodo"
-        />
-        <Button onClick={addNode}>Aggiungi Nodo</Button>
-        <Button onClick={connectNodes} isDisabled={selectedNodes.length !== 2}>
-          Collega Nodi
-        </Button>
-        <Button onClick={deleteSelectedNodes} isDisabled={selectedNodes.length === 0}>
-          Elimina Nodi Selezionati
-        </Button>
-        <Button onClick={() => handleZoom('in')}>Zoom In</Button>
-        <Button onClick={() => handleZoom('out')}>Zoom Out</Button>
-        <Button onClick={resetMindMap} colorScheme="red">Reset</Button>
-      </HStack>
+    <VStack spacing={4} align="stretch" w="100%" h={isMobile ? "100vh" : "600px"}>
+      {isMobile ? (
+        <VStack spacing={2} w="100%">
+          <Input
+            value={newNodeContent}
+            onChange={(e) => setNewNodeContent(e.target.value)}
+            placeholder="Contenuto del nuovo nodo"
+          />
+          <Button onClick={addNode} w="100%">Aggiungi Nodo</Button>
+          <Button onClick={connectNodes} isDisabled={selectedNodes.length !== 2} w="100%">
+            Collega Nodi
+          </Button>
+          <Button onClick={deleteSelectedNodes} isDisabled={selectedNodes.length === 0} w="100%">
+            Elimina Nodi Selezionati
+          </Button>
+          <HStack w="100%">
+            <Button onClick={() => handleZoom('in')} flex={1}>Zoom In</Button>
+            <Button onClick={() => handleZoom('out')} flex={1}>Zoom Out</Button>
+          </HStack>
+          <Button onClick={resetMindMap} colorScheme="red" w="100%">Reset</Button>
+        </VStack>
+      ) : (
+        <HStack>
+          <Input
+            value={newNodeContent}
+            onChange={(e) => setNewNodeContent(e.target.value)}
+            placeholder="Contenuto del nuovo nodo"
+          />
+          <Button onClick={addNode}>Aggiungi Nodo</Button>
+          <Button onClick={connectNodes} isDisabled={selectedNodes.length !== 2}>
+            Collega Nodi
+          </Button>
+          <Button onClick={deleteSelectedNodes} isDisabled={selectedNodes.length === 0}>
+            Elimina Nodi Selezionati
+          </Button>
+          <Button onClick={() => handleZoom('in')}>Zoom In</Button>
+          <Button onClick={() => handleZoom('out')}>Zoom Out</Button>
+          <Button onClick={resetMindMap} colorScheme="red">Reset</Button>
+        </HStack>
+      )}
       <Box
         ref={containerRef}
         position="relative"
@@ -160,7 +184,7 @@ const InteractiveMindMap: React.FC = () => {
         border="1px solid"
         borderColor="gray.200"
         borderRadius="md"
-        h="100%"
+        h={isMobile ? "calc(100vh - 280px)" : "100%"}
       >
         <motion.div
           style={{
@@ -212,7 +236,7 @@ const InteractiveMindMap: React.FC = () => {
             >
               <Text>{node.content}</Text>
             </motion.div>
-            ))}
+          ))}
         </motion.div>
       </Box>
     </VStack>
