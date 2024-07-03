@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Box, Button, Input, VStack, HStack, Text, useToast, useMediaQuery } from '@chakra-ui/react';
+import { Box, Button, Input, VStack, HStack, Text, useToast, useMediaQuery, useColorModeValue } from '@chakra-ui/react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -27,7 +27,8 @@ const InteractiveMindMap: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const toast = useToast();
   const [isMobile] = useMediaQuery("(max-width: 768px)");
-
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
@@ -137,109 +138,114 @@ const InteractiveMindMap: React.FC = () => {
   };
 
   return (
-    <VStack spacing={4} align="stretch" w="100%" h={isMobile ? "100vh" : "600px"}>
-      {isMobile ? (
-        <VStack spacing={2} w="100%">
-          <Input
-            value={newNodeContent}
-            onChange={(e) => setNewNodeContent(e.target.value)}
-            placeholder="Contenuto del nuovo nodo"
-          />
-          <Button onClick={addNode} w="100%">Aggiungi Nodo</Button>
-          <Button onClick={connectNodes} isDisabled={selectedNodes.length !== 2} w="100%">
-            Collega Nodi
-          </Button>
-          <Button onClick={deleteSelectedNodes} isDisabled={selectedNodes.length === 0} w="100%">
-            Elimina Nodi Selezionati
-          </Button>
-          <HStack w="100%">
-            <Button onClick={() => handleZoom('in')} flex={1}>Zoom In</Button>
-            <Button onClick={() => handleZoom('out')} flex={1}>Zoom Out</Button>
-          </HStack>
-          <Button onClick={resetMindMap} colorScheme="red" w="100%">Reset</Button>
-        </VStack>
-      ) : (
-        <HStack>
-          <Input
-            value={newNodeContent}
-            onChange={(e) => setNewNodeContent(e.target.value)}
-            placeholder="Contenuto del nuovo nodo"
-          />
-          <Button onClick={addNode}>Aggiungi Nodo</Button>
-          <Button onClick={connectNodes} isDisabled={selectedNodes.length !== 2}>
-            Collega Nodi
-          </Button>
-          <Button onClick={deleteSelectedNodes} isDisabled={selectedNodes.length === 0}>
-            Elimina Nodi Selezionati
-          </Button>
-          <Button onClick={() => handleZoom('in')}>Zoom In</Button>
-          <Button onClick={() => handleZoom('out')}>Zoom Out</Button>
-          <Button onClick={resetMindMap} colorScheme="red">Reset</Button>
-        </HStack>
-      )}
-      <Box
-        ref={containerRef}
-        position="relative"
-        overflow="hidden"
-        border="1px solid"
-        borderColor="gray.200"
-        borderRadius="md"
-        h={isMobile ? "calc(100vh - 280px)" : "100%"}
-      >
-        <motion.div
-          style={{
-            x: mapX,
-            y: mapY,
-            scale,
-          }}
-          drag
-          dragConstraints={containerRef}
-        >
-          {connections.map((conn, index) => {
-            const sourceNode = nodes.find(node => node.id === conn.source);
-            const targetNode = nodes.find(node => node.id === conn.target);
-            if (!sourceNode || !targetNode) return null;
-
-            return (
-              <svg key={index} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
-                <line
-                  x1={sourceNode.x + 50}
-                  y1={sourceNode.y + 25}
-                  x2={targetNode.x + 50}
-                  y2={targetNode.y + 25}
-                  stroke="gray"
-                  strokeWidth="2"
+      <Box  borderWidth="1px"
+            borderRadius="lg" bg={bgColor}
+            borderColor={borderColor} p={4}  w="100%"  >
+        <VStack spacing={4} align="stretch" w="100%" h={isMobile ? "100vh" : "600px"} >
+          {isMobile ? (
+              <VStack spacing={2} w="100%">
+                <Input
+                    value={newNodeContent}
+                    onChange={(e) => setNewNodeContent(e.target.value)}
+                    placeholder="Contenuto del nuovo nodo"
                 />
-              </svg>
-            );
-          })}
-          {nodes.map((node) => (
+                <Button onClick={addNode} w="100%">Aggiungi Nodo</Button>
+                <Button onClick={connectNodes} isDisabled={selectedNodes.length !== 2} w="100%">
+                  Collega Nodi
+                </Button>
+                <Button onClick={deleteSelectedNodes} isDisabled={selectedNodes.length === 0} w="100%">
+                  Elimina Nodi Selezionati
+                </Button>
+                <HStack w="100%">
+                  <Button onClick={() => handleZoom('in')} flex={1}>Zoom In</Button>
+                  <Button onClick={() => handleZoom('out')} flex={1}>Zoom Out</Button>
+                </HStack>
+                <Button onClick={resetMindMap} colorScheme="red" w="100%">Reset</Button>
+              </VStack>
+          ) : (
+              <HStack>
+                <Input
+                    value={newNodeContent}
+                    onChange={(e) => setNewNodeContent(e.target.value)}
+                    placeholder="Contenuto del nuovo nodo"
+                />
+                <Button onClick={addNode}>Aggiungi Nodo</Button>
+                <Button onClick={connectNodes} isDisabled={selectedNodes.length !== 2}>
+                  Collega Nodi
+                </Button>
+                <Button onClick={deleteSelectedNodes} isDisabled={selectedNodes.length === 0}>
+                  Elimina Nodi Selezionati
+                </Button>
+                <Button onClick={() => handleZoom('in')}>Zoom In</Button>
+                <Button onClick={() => handleZoom('out')}>Zoom Out</Button>
+                <Button onClick={resetMindMap} colorScheme="red">Reset</Button>
+              </HStack>
+          )}
+          <Box
+              ref={containerRef}
+              position="relative"
+              overflow="hidden"
+              border="1px solid"
+              borderColor="gray.200"
+              borderRadius="md"
+              h={isMobile ? "calc(100vh - 280px)" : "100%"}
+          >
             <motion.div
-              key={node.id}
-              style={{
-                position: 'absolute',
-                top: node.y,
-                left: node.x,
-                background: selectedNodes.includes(node.id) ? 'lightblue' : 'white',
-                border: '1px solid gray',
-                borderRadius: '4px',
-                padding: '10px',
-                cursor: 'move',
-                userSelect: 'none',
-              }}
-              drag
-              dragMomentum={false}
-              onDrag={(_, info) => {
-                updateNodePosition(node.id, node.x + info.delta.x / scale, node.y + info.delta.y / scale);
-              }}
-              onClick={() => toggleNodeSelection(node.id)}
+                style={{
+                  x: mapX,
+                  y: mapY,
+                  scale,
+                }}
+                drag
+                dragConstraints={containerRef}
             >
-              <Text>{node.content}</Text>
+              {connections.map((conn, index) => {
+                const sourceNode = nodes.find(node => node.id === conn.source);
+                const targetNode = nodes.find(node => node.id === conn.target);
+                if (!sourceNode || !targetNode) return null;
+
+                return (
+                    <svg key={index} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                      <line
+                          x1={sourceNode.x + 50}
+                          y1={sourceNode.y + 25}
+                          x2={targetNode.x + 50}
+                          y2={targetNode.y + 25}
+                          stroke="gray"
+                          strokeWidth="2"
+                      />
+                    </svg>
+                );
+              })}
+              {nodes.map((node) => (
+                  <motion.div
+                      key={node.id}
+                      style={{
+                        position: 'absolute',
+                        top: node.y,
+                        left: node.x,
+                        background: selectedNodes.includes(node.id) ? 'lightblue' : 'gray.400',
+                        border: '1px solid gray',
+                        borderRadius: '4px',
+                        padding: '10px',
+                        cursor: 'move',
+                        userSelect: 'none',
+                      }}
+                      drag
+                      dragMomentum={false}
+                      onDrag={(_, info) => {
+                        updateNodePosition(node.id, node.x + info.delta.x / scale, node.y + info.delta.y / scale);
+                      }}
+                      onClick={() => toggleNodeSelection(node.id)}
+                  >
+                    <Text>{node.content}</Text>
+                  </motion.div>
+              ))}
             </motion.div>
-          ))}
-        </motion.div>
+          </Box>
+        </VStack>
+
       </Box>
-    </VStack>
   );
 };
 

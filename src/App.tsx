@@ -104,6 +104,14 @@ useEffect(() => {
         });
       } catch (error) {
         console.error('Errore nell\'aggiunta della card:', error);
+        const newCard: CardData = {
+          id: uuidv4(),
+          title:url,
+          url,
+          favicon:url+"/favicon.ico"
+        };
+
+        setCards(prevCards => [...prevCards, newCard]);
         toast({
           title: "Errore",
           description: "Non è stato possibile aggiungere la card. Riprova più tardi.",
@@ -192,13 +200,14 @@ useEffect(() => {
              <MoodColorizer />
              
              <InteractiveMindMap />
-            <CardList
-              cards={cards}
-              onDragEnd={onDragEnd}
-              isEditMode={isEditMode}
-              onUpdateCard={updateCard}
-            />
+
             <DynamicDashboard></DynamicDashboard>
+            <CardList
+                cards={cards}
+                onDragEnd={onDragEnd}
+                isEditMode={isEditMode}
+                onUpdateCard={updateCard}
+            />
           </Flex>
         </VStack>
       </Box>

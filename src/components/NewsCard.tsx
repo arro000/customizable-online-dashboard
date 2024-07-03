@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text, VStack, Input, Button, UnorderedList, ListItem, Link, IconButton, Spinner, HStack } from '@chakra-ui/react';
+import { Box, Text, VStack, Input, Button, UnorderedList, ListItem, Link, IconButton, Spinner, HStack, useColorModeValue } from '@chakra-ui/react';
 import { SettingsIcon, RepeatIcon } from '@chakra-ui/icons';
 
 interface FeedItem {
@@ -15,7 +15,8 @@ const NewsCard: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [showSettings, setShowSettings] = useState(false);
-
+    const bgColor = useColorModeValue('white', 'gray.700');
+    const borderColor = useColorModeValue('gray.200', 'gray.600');
     useEffect(() => {
         const savedFeeds = localStorage.getItem('rssFeeds');
         if (savedFeeds) {
@@ -77,7 +78,8 @@ const NewsCard: React.FC = () => {
     };
 
     return (
-        <Box borderWidth="1px" borderRadius="lg" p={4} width="300px" position="relative">
+        <Box borderWidth="1px" borderRadius="lg" p={4} width="300px" position="relative"   bg={bgColor}
+             borderColor={borderColor}>
             <HStack position="absolute" top={2} right={2}>
                 <IconButton
                     aria-label="Aggiorna notizie"

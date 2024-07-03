@@ -54,7 +54,8 @@ const NeuroNetVisualizer: React.FC = () => {
   
   const { width, height } = useResizeObserver(containerRef);
 
-  const bgColor = useColorModeValue('white', 'gray.800');
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
   const textColor = useColorModeValue('gray.800', 'white');
 
   const initializeNeurons = useCallback(() => {
@@ -163,6 +164,7 @@ const NeuroNetVisualizer: React.FC = () => {
       width="100%"
       height="600px"
       bg={bgColor}
+      borderColor={borderColor}
     >
       <VStack spacing={4} align="stretch" height="100%">
         <Text fontSize="xl" fontWeight="bold" color={textColor}>NeuroNet Visualizer</Text>

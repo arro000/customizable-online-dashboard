@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Text, VStack, Input, Button, Spinner, IconButton } from '@chakra-ui/react';
+import { Box, Text, VStack, Input, Button, Spinner, IconButton, useColorModeValue } from '@chakra-ui/react';
 import { SettingsIcon } from '@chakra-ui/icons';
 
 interface WeatherData {
@@ -63,9 +63,11 @@ const WeatherCard: React.FC = () => {
         fetchWeather(city);
         setShowSettings(false);
     };
-
+    const bgColor = useColorModeValue('white', 'gray.700');
+    const borderColor = useColorModeValue('gray.200', 'gray.600');
     return (
-        <Box borderWidth="1px" borderRadius="lg" p={4} width="300px" position="relative">
+        <Box borderWidth="1px" borderRadius="lg" p={4} width="300px" position="relative"   bg={bgColor}
+             borderColor={borderColor}>
             <IconButton
                 aria-label="Impostazioni"
                 icon={<SettingsIcon />}
@@ -73,6 +75,7 @@ const WeatherCard: React.FC = () => {
                 position="absolute"
                 top={2}
                 right={2}
+
                 onClick={() => setShowSettings(!showSettings)}
             />
             <VStack align="start" spacing={4}>

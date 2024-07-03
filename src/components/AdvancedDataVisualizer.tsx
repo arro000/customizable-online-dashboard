@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box,  VStack, HStack,  Select, Input, Table, Thead, Tbody, Tr, Th, Td, useToast } from '@chakra-ui/react';
+import { Box,  VStack, HStack,  Select, Input, Table, Thead, Tbody, Tr, Th, Td, useToast, useColorModeValue } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Chart } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
@@ -90,8 +90,13 @@ const AdvancedDataVisualizer: React.FC = () => {
       }
     ]
   };
-
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
   return (
+      <Box    borderWidth="1px"
+              borderRadius="lg"
+              width={{ base: '100%', md: '300px' }} bg={bgColor}
+             borderColor={borderColor} p={4}>
     <VStack spacing={4} align="stretch">
       <Input type="file" onChange={handleFileUpload} accept=".csv" />
       
@@ -154,6 +159,7 @@ const AdvancedDataVisualizer: React.FC = () => {
         </Table>
       </Box>
     </VStack>
+      </Box>
   );
 };
 

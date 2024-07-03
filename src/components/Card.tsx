@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Text, Image, Input, Button, VStack, HStack } from '@chakra-ui/react';
+import { Text, Image, Input, Button, VStack, HStack, Box, useColorModeValue } from '@chakra-ui/react';
 import { motion, MotionProps } from 'framer-motion';
 import styled from '@emotion/styled';
 export interface CardData {
@@ -40,8 +40,7 @@ const MotionCard = styled(motion.div)<{ isEditMode: boolean }>`
 const CardContent = styled.div`
     padding: 16px;
     height: 100%;
-    display: flex;
-    background: white;
+    display: flex; 
     color: black;
     flex-direction: column;
     justify-content: center;
@@ -94,9 +93,14 @@ const Card: React.FC<CardProps> = ({
             damping: 30
         }
     };
-
+    const bgColor = useColorModeValue('white', 'gray.700');
+    const borderColor = useColorModeValue('gray.200', 'gray.600');
     return (
-        <MotionCard {...motionProps} isEditMode={isEditMode} onClick={handleClick}      id={id} >
+        <MotionCard {...motionProps} isEditMode={isEditMode} onClick={handleClick}       id={id} >
+            <Box  borderWidth="1px" borderRadius="lg" p={4} width="300px" position="relative"   bg={bgColor}
+                  borderColor={borderColor}>
+
+
             <CardContent>
                 {isEditing ? (
                     <VStack spacing={2} width="100%">
@@ -125,6 +129,7 @@ const Card: React.FC<CardProps> = ({
                     </VStack>
                 )}
             </CardContent>
+            </Box>
         </MotionCard>
     );
 };
