@@ -1,0 +1,2601 @@
+sources
+App.tsx
+import React, { useState, useEffect } from 'react';
+import { ChakraProvider,useColorMode ,Button, useToast, Spacer, Box, VStack, HStack, Flex } from '@chakra-ui/react';
+import ActionButtons from './components/ActionButtons';
+import CardList from './components/CardList';
+import Clock from './components/Clock';
+import DynamicBackground from './components/DynamicBackground';
+import NewsCard from './components/NewsCard';
+import WeatherCard from './components/WeatherCard';
+import TodoList from './components/TodoList';
+import QuoteGenerator from './components/QuoteGenerator'
+import MoodColorizer from './components/MoodColorizer'
+import PomodoroTimer from './components/PomodoroTimer'
+import Calculator from './components/Calculator'
+import NeuroNetVisualizer from './components/NeuroNetVisualizer';
+import MoodMusicMixer from './components/MoodMusicMixer';
+import ConfigurableIframeCard from './components/ConfigurableIframeCard'
+import InteractiveMindMap from "./components/InteractiveMindMap"
+import DynamicDashboard from "./components/DynamicDashboard"
+import AdvancedDataVisualizer from "./components/AdvancedDataVisualizer"
+import {CardData} from "./components/Card";
+import { v4 as uuidv4 } from 'uuid';
+
+
+const App: React.FC = () => {
+  const [cards, setCards] = useState<CardData[]>([]);
+  const [isEditMode, setIsEditMode] = useState(false);
+const { colorMode, toggleColorMode } = useColorMode();
+  const toast = useToast();
+  const toggleEditMode = () => setIsEditMode(!isEditMode);
+  useEffect(() => {
+    const savedCards = localStorage.getItem('cards');
+    if (savedCards) {
+      setCards(JSON.parse(savedCards));
+    }
+  }, []);
+  const updateCard = (id: string, newData: { title: string; url: string }) => {
+    setCards(prevCards =>
+        prevCards.map(card =>
+            card.id === id ? { ...card, ...newData } : card
+        )
+    );
+  }
+
+useEffect(() => {
+    localStorage.setItem('cards', JSON.stringify(cards));
+  }, [cards]);
+
+  const onDragEnd = (id: string, newIndex: number) => {
+    setCards(prevCards => {
+      const newCards = Array.from(prevCards);
+      const draggedCardIndex = newCards.findIndex(card => card.id === id);
+      console.log(draggedCardIndex, newIndex);
+      if (draggedCardIndex === -1 || draggedCardIndex === newIndex) return prevCards;
+
+      const [draggedCard] = newCards.splice(draggedCardIndex, 1);
+      newCards.splice(newIndex, 0, draggedCard);
+
+      return newCards.filter(card => card !== undefined);
+    });
+  };
+  const addCard = async () => {
+    const url = prompt('Inserisci l\'URL del sito:');
+    if (url) {
+      try {
+        const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+        const response = await fetch(proxyUrl);
+        const data = await response.json();
+
+        if (data.status.http_code !== 200) {
+          throw new Error('Errore nel recupero delle informazioni del sito');
+        }
+
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(data.contents, 'text/html');
+
+        const title = doc.querySelector('title')?.textContent ||
+            doc.querySelector('meta[property="og:title"]')?.getAttribute('content') ||
+            'Sito sconosciuto';
+
+        let favicon = doc.querySelector('link[rel="icon"]')?.getAttribute('href') ||
+            doc.querySelector('link[rel="shortcut icon"]')?.getAttribute('href') ||
+            '/default-favicon.ico';
+
+        // Assicuriamoci che l'URL della favicon sia assoluto
+        if (favicon && !favicon.startsWith('http')) {
+          favicon = new URL(favicon, url).href;
+        }
+
+        const newCard: CardData = {
+          id: uuidv4(),
+          title,
+          url,
+          favicon
+        };
+
+        setCards(prevCards => [...prevCards, newCard]);
+
+        toast({
+          title: "Card aggiunta",
+          description: "La nuova card è stata aggiunta con successo.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } catch (error) {
+        console.error('Errore nell\'aggiunta della card:', error);
+        const newCard: CardData = {
+          id: uuidv4(),
+          title:url,
+          url,
+          favicon:url+"/favicon.ico"
+        };
+
+        setCards(prevCards => [...prevCards, newCard]);
+        toast({
+          title: "Errore",
+          description: "Non è stato possibile aggiungere la card. Riprova più tardi.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    }
+  }
+    
+  const saveCards = (newCards: CardData[]) => {
+    setCards(newCards);
+    localStorage.setItem('cards', JSON.stringify(newCards));
+  };
+
+
+  const handleExportConfig = () => {
+    const config = JSON.stringify(cards);
+    const blob = new Blob([config], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dashboard-config.json';
+    a.click();
+  };
+
+  const handleImportConfig = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        try {
+          const importedCards = JSON.parse(content);
+          saveCards(importedCards);
+        } catch (error) {
+          console.error('Error importing configuration:', error);
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
+
+  
+
+  return (
+    <ChakraProvider>
+      <DynamicBackground />
+      <Box p={4}>
+        <VStack spacing={4} align="stretch">
+          <HStack justify="space-between">
+            <Clock />
+            <Flex gap={6} direction={"column"}>
+                <Button onClick={toggleColorMode} size="sm">
+                Tema: {colorMode === "light" ? "Scuro" : "Chiaro"}
+              </Button>
+              <Button onClick={toggleEditMode} size="sm" mr={2}>
+                {isEditMode ? "Modalità Navigazione" : "Modalità Modifica"}
+              </Button>
+              <Spacer />
+            <ActionButtons
+              onAddCard={addCard}
+              onExportConfig={handleExportConfig}
+              onImportConfig={handleImportConfig}
+            />
+              
+            </Flex>
+          
+          </HStack>
+          <Flex
+            flexWrap="wrap"
+            justifyContent={{ base: 'center', md: 'flex-start' }}
+            gap={4}
+          >
+            <WeatherCard />
+            <NewsCard />
+            <TodoList />
+            <AdvancedDataVisualizer />
+            <QuoteGenerator />
+             <Calculator />
+            <PomodoroTimer />
+            <NeuroNetVisualizer />
+             <ConfigurableIframeCard />
+            <MoodMusicMixer />
+             <MoodColorizer />
+             
+             <InteractiveMindMap />
+
+            <DynamicDashboard></DynamicDashboard>
+            <CardList
+                cards={cards}
+                onDragEnd={onDragEnd}
+                isEditMode={isEditMode}
+                onUpdateCard={updateCard}
+            />
+          </Flex>
+        </VStack>
+      </Box>
+    </ChakraProvider>
+  );
+};
+
+export default App;index.css
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+components
+import React from 'react';
+import { Button, VStack } from '@chakra-ui/react';
+
+interface ActionButtonsProps {
+    onAddCard: () => void;
+    onExportConfig: () => void;
+    onImportConfig: (event: React.ChangeEvent<HTMLInputElement>) => void;
+}
+
+const ActionButtons: React.FC<ActionButtonsProps> = ({ onAddCard, onExportConfig, onImportConfig }) => {
+    return (
+        <VStack spacing={2}>
+            <Button onClick={onAddCard} size="sm">Aggiungi Card</Button>
+            <Button onClick={onExportConfig} size="sm">Esporta</Button>
+            <Button as="label" htmlFor="import-config" size="sm">
+                Importa
+                <input
+                    id="import-config"
+                    type="file"
+                    accept=".json"
+                    onChange={onImportConfig}
+                    style={{ display: 'none' }}
+                />
+            </Button>
+        </VStack>
+    );
+};
+
+export default ActionButtons;import React, { useState, useEffect } from 'react';
+import { Box,  VStack, HStack,  Select, Input, Table, Thead, Tbody, Tr, Th, Td, useToast, useColorModeValue } from '@chakra-ui/react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Chart } from 'react-chartjs-2';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import Papa from 'papaparse';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+
+interface DataItem {
+  [key: string]: string | number;
+}
+
+const AdvancedDataVisualizer: React.FC = () => {
+  const [data, setData] = useState<DataItem[]>([]);
+  const [headers, setHeaders] = useState<string[]>([]);
+  const [filteredData, setFilteredData] = useState<DataItem[]>([]);
+  const [sortColumn, setSortColumn] = useState('');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
+  const [filterColumn, setFilterColumn] = useState('');
+  const [filterValue, setFilterValue] = useState('');
+  const [chartColumn, setChartColumn] = useState('');
+  const toast = useToast();
+
+  useEffect(() => {
+    applyFilterAndSort();
+  }, [data, sortColumn, sortDirection, filterColumn, filterValue]);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      Papa.parse(file, {
+        complete: (results) => {
+          const parsedData = results.data as DataItem[];
+          if (parsedData.length > 0) {
+            setHeaders(Object.keys(parsedData[0]));
+            setData(parsedData);
+            toast({
+              title: "Dati caricati con successo",
+              status: "success",
+              duration: 3000,
+              isClosable: true,
+            });
+          }
+        },
+        header: true,
+        dynamicTyping: true,
+        delimiter:","
+      });
+    }
+  };
+
+  const applyFilterAndSort = () => {
+    let result = [...data];
+
+    if (filterColumn && filterValue) {
+      result = result.filter(item => 
+        String(item[filterColumn]).toLowerCase().includes(filterValue.toLowerCase())
+      );
+    }
+
+    if (sortColumn) {
+      result.sort((a, b) => {
+        if (a[sortColumn] < b[sortColumn]) return sortDirection === 'asc' ? -1 : 1;
+        if (a[sortColumn] > b[sortColumn]) return sortDirection === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    setFilteredData(result);
+  };
+
+  const toggleSort = (column: string) => {
+    if (column === sortColumn) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
+    }
+  };
+
+  const chartData = {
+    labels: filteredData.map(item => String(item[headers[0]])),
+    datasets: [
+      {
+        label: chartColumn,
+        data: filteredData.map(item => Number(item[chartColumn])),
+        borderColor: 'rgb(75, 192, 192)',
+        tension: 0.1
+      }
+    ]
+  };
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  return (
+      <Box    borderWidth="1px"
+              borderRadius="lg"
+              width={{ base: '100%', md: '300px' }} bg={bgColor}
+             borderColor={borderColor} p={4}>
+    <VStack spacing={4} align="stretch">
+      <Input type="file" onChange={handleFileUpload} accept=".csv" />
+      
+      <HStack>
+        <Select value={filterColumn} onChange={(e) => setFilterColumn(e.target.value)}>
+          <option value="">Seleziona colonna per filtrare</option>
+          {headers.map(header => (
+            <option key={header} value={header}>{header}</option>
+          ))}
+        </Select>
+        <Input 
+          placeholder="Valore filtro" 
+          value={filterValue} 
+          onChange={(e) => setFilterValue(e.target.value)}
+        />
+      </HStack>
+
+      <Select value={chartColumn} onChange={(e) => setChartColumn(e.target.value)}>
+        <option value="">Seleziona colonna per il grafico</option>
+        {headers.filter(header => typeof data[0]?.[header] === 'number').map(header => (
+          <option key={header} value={header}>{header}</option>
+        ))}
+      </Select>
+
+      {chartColumn && (
+        <Box height="300px">
+          <Chart type="line" data={chartData} />
+        </Box>
+      )}
+
+      <Box overflowX="auto">
+        <Table variant="simple">
+          <Thead>
+            <Tr>
+              {headers.map(header => (
+                <Th key={header} onClick={() => toggleSort(header)} cursor="pointer">
+                  {header}
+                  {sortColumn === header && (sortDirection === 'asc' ? ' ▲' : ' ▼')}
+                </Th>
+              ))}
+            </Tr>
+          </Thead>
+          <Tbody>
+            <AnimatePresence>
+              {filteredData.map((item, index) => (
+                <motion.tr
+                  key={index}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {headers.map(header => (
+                    <Td key={header}>{String(item[header])}</Td>
+                  ))}
+                </motion.tr>
+              ))}
+            </AnimatePresence>
+          </Tbody>
+        </Table>
+      </Box>
+    </VStack>
+      </Box>
+  );
+};
+
+export default AdvancedDataVisualizer;import React, { useState } from 'react';
+import {
+  Box,
+  Button,
+  Grid,
+  Input,
+  VStack,
+  useColorModeValue,
+  Switch,
+  Text,
+  HStack,
+} from '@chakra-ui/react';
+
+const Calculator: React.FC = () => {
+  const [display, setDisplay] = useState('0');
+  const [isScientific, setIsScientific] = useState(false);
+  const bgColor = useColorModeValue('gray.100', 'gray.700');
+  const buttonColor = useColorModeValue('gray.200', 'gray.600');
+
+  const handleClick = (value: string) => {
+    setDisplay((prev) => {
+      if (prev === '0') {
+        return value;
+      }
+      return prev + value;
+    });
+  };
+
+  const handleClear = () => {
+    setDisplay('0');
+  };
+
+  const handleCalculate = () => {
+    try {
+      setDisplay(eval(display).toString());
+    } catch (error) {
+      setDisplay('Error');
+    }
+  };
+
+  const handleScientific = (func: string) => {
+    try {
+      const result = eval(`Math.${func}(${display})`);
+      setDisplay(result.toString());
+    } catch (error) {
+      setDisplay('Error');
+    }
+  };
+
+  const simpleButtons = [
+    '7', '8', '9', '/',
+    '4', '5', '6', '*',
+    '1', '2', '3', '-',
+    '0', '.', '=', '+',
+  ];
+
+  const scientificButtons = [
+    'sin', 'cos', 'tan', 'log',
+    'sqrt', 'pow', 'exp', 'abs',
+  ];
+
+  return (
+    <Box
+      borderWidth="1px"
+      borderRadius="lg"
+      p={4}
+      width={{ base: '100%', md: isScientific ? '400px' : '300px' }}
+      bg={bgColor}
+    >
+      <VStack spacing={4}>
+        <HStack>
+          <Text>Simple</Text>
+          <Switch 
+            isChecked={isScientific}
+            onChange={(e) => setIsScientific(e.target.checked)}
+          />
+          <Text>Scientific</Text>
+        </HStack>
+        <Input
+          value={display}
+          readOnly
+          textAlign="right"
+          fontSize="2xl"
+          mb={4}
+        />
+        <Grid templateColumns={isScientific ? "repeat(5, 1fr)" : "repeat(4, 1fr)"} gap={2}>
+          {simpleButtons.map((btn) => (
+            <Button
+              key={btn}
+              onClick={() => btn === '=' ? handleCalculate() : handleClick(btn)}
+              bg={buttonColor}
+              size="lg"
+            >
+              {btn}
+            </Button>
+          ))}
+          {isScientific && scientificButtons.map((btn) => (
+            <Button
+              key={btn}
+              onClick={() => handleScientific(btn)}
+              bg={buttonColor}
+              size="lg"
+            >
+              {btn}
+            </Button>
+          ))}
+        </Grid>
+        <Button onClick={handleClear} colorScheme="red" width="100%">
+          Clear
+        </Button>
+      </VStack>
+    </Box>
+  );
+};
+
+export default Calculator;import React, { useState, useEffect } from 'react';
+import { Text, Image, Input, Button, VStack, HStack, Box, useColorModeValue } from '@chakra-ui/react';
+import { motion, MotionProps } from 'framer-motion';
+import styled from '@emotion/styled';
+export interface CardData {
+    id: string;
+    title: string;
+    url: string;
+    favicon: string;
+}
+
+interface CardProps {
+    id: string;
+    title: string;
+    url: string;
+    favicon: string;
+    onDragStart: () => void;
+    onDragEnd: (id: string) => void;
+    index: number;
+    isEditMode: boolean;
+    onUpdate: (id: string, newData: { title: string; url: string }) => void;
+}
+
+const MotionCard = styled(motion.div)<{ isEditMode: boolean }>`
+    width: 100%;
+    height: 140px;
+  
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+
+    &:hover {
+        box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    cursor: ${props => props.isEditMode ? 'grab' : 'pointer'};
+`;
+
+const CardContent = styled.div`
+    padding: 16px;
+    height: 100%;
+    display: flex; 
+    color: black;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+`;
+
+const Card: React.FC<CardProps> = ({
+                                       id,
+                                       title,
+                                       url,
+                                       favicon,
+                                       onDragStart,
+                                       onDragEnd,
+                                       index,
+                                       isEditMode,
+                                       onUpdate
+                                   }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [editTitle, setEditTitle] = useState(title);
+    const [editUrl, setEditUrl] = useState(url);
+
+    useEffect(() => {
+        setEditTitle(title);
+        setEditUrl(url);
+    }, [title, url]);
+
+    const handleSave = () => {
+        onUpdate(id, { title: editTitle, url: editUrl });
+        setIsEditing(false);
+    };
+
+    const handleClick = () => {
+        if (!isEditMode && !isEditing) {
+            window.open(url, '_blank');
+        }
+    };
+
+    const motionProps: MotionProps = {
+        drag: isEditMode,
+        dragConstraints: { left: 0, right: 0, top: 0, bottom: 0 },
+        dragElastic: 1,
+        dragMomentum: false,
+        whileDrag: { scale: 1.05, zIndex: 1 },
+        onDragStart: onDragStart,
+        onDragEnd: () => onDragEnd(id),
+        layout: true,
+        transition: {
+            type: "spring",
+            stiffness: 600,
+            damping: 30
+        }
+    };
+    const bgColor = useColorModeValue('white', 'gray.700');
+    const borderColor = useColorModeValue('gray.200', 'gray.600');
+    return (
+        <MotionCard {...motionProps} isEditMode={isEditMode} onClick={handleClick}       id={id} >
+            <Box  borderWidth="1px" borderRadius="lg" p={4} width="300px" position="relative"   bg={bgColor}
+                  borderColor={borderColor}>
+
+
+            <CardContent>
+                {isEditing ? (
+                    <VStack spacing={2} width="100%">
+                        <Input
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            placeholder="Titolo"
+                        />
+                        <Input
+                            value={editUrl}
+                            onChange={(e) => setEditUrl(e.target.value)}
+                            placeholder="URL"
+                        />
+                        <HStack>
+                            <Button size="sm" onClick={handleSave}>Salva</Button>
+                            <Button size="sm" onClick={() => setIsEditing(false)}>Annulla</Button>
+                        </HStack>
+                    </VStack>
+                ) : (
+                    <VStack spacing={2} align="center" justify="center" height="100%">
+                        {favicon && <Image src={favicon} alt="Favicon" boxSize="24px" />}
+                        <Text fontWeight="bold" textAlign="center">{title}</Text>
+                        {isEditMode && (
+                            <Button size="sm" onClick={() => setIsEditing(true)}>Modifica</Button>
+                        )}
+                    </VStack>
+                )}
+            </CardContent>
+            </Box>
+        </MotionCard>
+    );
+};
+
+export default Card;import React, { useState, useRef } from 'react';
+import { Box } from '@chakra-ui/react';
+import Card from './Card';
+import { motion, AnimatePresence } from 'framer-motion';
+
+interface CardData {
+    id: string;
+    title: string;
+    url: string;
+    favicon: string;
+}
+
+interface CardListProps {
+    cards: CardData[];
+    onDragEnd: (id: string, newIndex: number) => void;
+    isEditMode: boolean;
+    onUpdateCard: (id: string, newData: { title: string; url: string }) => void;
+}
+
+const CardList: React.FC<CardListProps> = ({ cards, onDragEnd, isEditMode, onUpdateCard }) => {
+    const [draggingId, setDraggingId] = useState<string | null>(null);
+    const dropZoneRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+    const handleDragStart = (id: string) => {
+        setDraggingId(id);
+    };
+
+    const handleDragEnd = () => {
+        if (draggingId !== null) {
+            const dropZoneIndex = findNearestDropZone();
+            if (dropZoneIndex !== -1) {
+                onDragEnd(draggingId, dropZoneIndex);
+            }
+            setDraggingId(null);
+        }
+    };
+
+    const findNearestDropZone = () => {
+        if (!draggingId) return -1;
+
+        const draggingElement = document.getElementById(draggingId);
+        if (!draggingElement) return -1;
+
+        const draggingRect = draggingElement.getBoundingClientRect();
+        const draggingCenter = {
+            x: draggingRect.left + draggingRect.width / 2,
+            y: draggingRect.top + draggingRect.height / 2
+        };
+
+        let nearestIndex = -1;
+        let minDistance = Infinity;
+
+        dropZoneRefs.current.forEach((dropZone, index) => {
+            if (dropZone) {
+                const dropZoneRect = dropZone.getBoundingClientRect();
+                const dropZoneCenter = {
+                    x: dropZoneRect.left + dropZoneRect.width / 2,
+                    y: dropZoneRect.top + dropZoneRect.height / 2
+                };
+                const distance = Math.sqrt(
+                    Math.pow(dropZoneCenter.x - draggingCenter.x, 2) +
+                    Math.pow(dropZoneCenter.y - draggingCenter.y, 2)
+                );
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestIndex = index;
+                }
+            }
+        });
+
+        return nearestIndex;
+    };
+
+    const DropZone = ({ index }: { index: number }) => (
+        <AnimatePresence>
+            {isEditMode && (
+                <motion.div
+                    ref={(el) => (dropZoneRefs.current[index] = el)}
+                    initial={{ height: 0, opacity: 0 }}
+
+                    animate={{
+                        height: draggingId ? '20px' : '10px',
+                        opacity: draggingId ? 1 : 0.5,
+                        backgroundColor: draggingId ? 'rgba(0, 100, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+                    }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                        margin: '5px 0',
+                        borderRadius: '4px',
+                        width: '100%',
+                    }}
+                />
+            )}
+        </AnimatePresence>
+    );
+
+    return (
+        <Box
+            display="grid"
+            gridTemplateColumns="repeat(auto-fill, minmax(250px, 1fr))"
+            gap={4}
+            width="100%"
+        >
+            {cards.map((card, index) => (
+                <React.Fragment key={card.id} >
+                    <Box position={"relative"} >
+                        <DropZone index={index} />
+                        <Card
+                            id={card.id}
+                            title={card.title}
+                            url={card.url}
+                            favicon={card.favicon}
+                            onDragStart={() => handleDragStart(card.id)}
+                            onDragEnd={handleDragEnd}
+                            index={index}
+                            isEditMode={isEditMode}
+                            onUpdate={onUpdateCard}
+                        />
+                    </Box>
+
+                </React.Fragment>
+            ))}
+            <DropZone index={cards.length} />
+        </Box>
+    );
+};
+
+export default CardList;import React, { useState, useEffect } from 'react';
+import { Box, Text, VStack } from '@chakra-ui/react';
+
+const Clock: React.FC = () => {
+    const [time, setTime] = useState(new Date());
+
+    useEffect(() => {
+        const timer = setInterval(() => setTime(new Date()), 1000);
+        return () => clearInterval(timer);
+    }, []);
+
+    return (
+        <VStack>
+            <Text fontSize="6xl" fontWeight="bold">
+                {time.toLocaleTimeString()}
+            </Text>
+            <Text fontSize="xl">
+                {time.toLocaleDateString()}
+            </Text>
+        </VStack>
+    );
+};
+
+export default Clock;import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Input,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
+  Switch,
+  Button,
+  useColorModeValue,
+  Collapse,
+} from '@chakra-ui/react';
+import { ChevronDownIcon, ChevronUpIcon } from '@chakra-ui/icons';
+
+interface IframeConfig {
+  url: string;
+  width: number;
+  height: number;
+  allowFullscreen: boolean;
+  allowPaymentRequest: boolean;
+  loading: 'eager' | 'lazy';
+  sandbox: string[];
+}
+
+const defaultConfig: IframeConfig = {
+  url: 'https://example.com',
+  width: 600,
+  height: 400,
+  allowFullscreen: true,
+  allowPaymentRequest: false,
+  loading: 'lazy',
+  sandbox: ['allow-scripts', 'allow-same-origin'],
+};
+
+const ConfigurableIframeCard: React.FC = () => {
+  const [config, setConfig] = useState<IframeConfig>(defaultConfig);
+  const [showConfig, setShowConfig] = useState(false);
+
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+
+  useEffect(() => {
+    const savedConfig = localStorage.getItem('iframeConfig');
+    if (savedConfig) {
+      setConfig(JSON.parse(savedConfig));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('iframeConfig', JSON.stringify(config));
+  }, [config]);
+
+  const handleConfigChange = (key: keyof IframeConfig, value: any) => {
+    setConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const toggleSandboxOption = (option: string) => {
+    setConfig(prev => ({
+      ...prev,
+      sandbox: prev.sandbox.includes(option)
+        ? prev.sandbox.filter(item => item !== option)
+        : [...prev.sandbox, option],
+    }));
+  };
+
+  const resetConfig = () => {
+    setConfig(defaultConfig);
+  };
+
+  return (
+    <Box
+      borderWidth="1px"
+      borderRadius="lg"
+      overflow="hidden"
+      boxShadow="md"
+      bg={bgColor}
+      borderColor={borderColor}
+      maxWidth="800px"
+      width="100%"
+    >
+      <VStack spacing={4} align="stretch" p={4}>
+        <HStack justifyContent="space-between">
+          <Text fontSize="xl" fontWeight="bold">Iframe Configurabile</Text>
+          <Button
+            onClick={() => setShowConfig(!showConfig)}
+            rightIcon={showConfig ? <ChevronUpIcon /> : <ChevronDownIcon />}
+          >
+            {showConfig ? 'Nascondi' : 'Mostra'} Configurazione
+          </Button>
+        </HStack>
+
+        <Collapse in={showConfig} animateOpacity>
+          <VStack spacing={4} align="stretch" borderWidth="1px" borderRadius="md" p={4}>
+            <Input
+              placeholder="URL dell'iframe"
+              value={config.url}
+              onChange={(e) => handleConfigChange('url', e.target.value)}
+            />
+            <HStack>
+              <NumberInput
+                value={config.width}
+                onChange={(_, value) => handleConfigChange('width', value)}
+                min={100}
+                max={1200}
+              >
+                <NumberInputField placeholder="Larghezza" />
+                <NumberInputStepper>
+                  <NumberIncrementStepper />
+                  <NumberDecrementStepper />
+                </NumberInputStepper>
+              </NumberInput>
+              <NumberInput
+                value={config.height}
+                onChange={(_, value) => handleConfigChange('height', value)}
+                min={100}
+                max={1200}
+              >
+                <NumberInputField placeholder="Altezza" />
+                <NumberInputStepper>
+                  <NumberIncrementStepper />
+                  <NumberDecrementStepper />
+                </NumberInputStepper>
+              </NumberInput>
+            </HStack>
+            <HStack>
+              <Switch
+                isChecked={config.allowFullscreen}
+                onChange={(e) => handleConfigChange('allowFullscreen', e.target.checked)}
+              />
+              <Text>Permetti Fullscreen</Text>
+            </HStack>
+            <HStack>
+              <Switch
+                isChecked={config.allowPaymentRequest}
+                onChange={(e) => handleConfigChange('allowPaymentRequest', e.target.checked)}
+              />
+              <Text>Permetti Richieste di Pagamento</Text>
+            </HStack>
+            <HStack>
+              <Text>Caricamento:</Text>
+              <Button
+                size="sm"
+                colorScheme={config.loading === 'eager' ? 'blue' : 'gray'}
+                onClick={() => handleConfigChange('loading', 'eager')}
+              >
+                Eager
+              </Button>
+              <Button
+                size="sm"
+                colorScheme={config.loading === 'lazy' ? 'blue' : 'gray'}
+                onClick={() => handleConfigChange('loading', 'lazy')}
+              >
+                Lazy
+              </Button>
+            </HStack>
+            <Text fontWeight="bold">Opzioni Sandbox:</Text>
+            <HStack wrap="wrap">
+              {['allow-scripts', 'allow-same-origin', 'allow-forms', 'allow-popups'].map((option) => (
+                <Button
+                  key={option}
+                  size="sm"
+                  colorScheme={config.sandbox.includes(option) ? 'green' : 'gray'}
+                  onClick={() => toggleSandboxOption(option)}
+                >
+                  {option}
+                </Button>
+              ))}
+            </HStack>
+            <Button onClick={resetConfig} colorScheme="red">Reimposta Configurazione</Button>
+          </VStack>
+        </Collapse>
+
+        <Box
+          borderWidth="1px"
+          borderRadius="md"
+          overflow="hidden"
+        >
+          <iframe
+            src={config.url}
+            width={config.width}
+            height={config.height}
+            allowFullScreen={config.allowFullscreen}
+            loading={config.loading}
+            sandbox={config.sandbox.join(' ')}
+            style={{ border: 'none' }}
+            {...(config.allowPaymentRequest ? { allowPaymentRequest: true } : {})}
+          />
+        </Box>
+      </VStack>
+    </Box>
+  );
+};
+
+export default ConfigurableIframeCard;import React, { useEffect, useRef } from 'react';
+import { Box } from '@chakra-ui/react';
+
+const DynamicBackground: React.FC = () => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const resize = () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        };
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        const particles: Array<{ x: number; y: number; radius: number; color: string; vx: number; vy: number }> = [];
+
+        for (let i = 0; i < 100; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                radius: Math.random() * 5 + 1,
+                color: `hsl(${Math.random() * 360}, 70%, 60%)`,
+                vx: (Math.random() - 0.5) * 2,
+                vy: (Math.random() - 0.5) * 2
+            });
+        }
+
+        const animate = () => {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            particles.forEach(particle => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+
+                if (particle.x < 0 || particle.x > canvas.width) particle.vx *= -1;
+                if (particle.y < 0 || particle.y > canvas.height) particle.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+                ctx.fillStyle = particle.color;
+                ctx.fill();
+            });
+
+            requestAnimationFrame(animate);
+        };
+
+        animate();
+
+        return () => window.removeEventListener('resize', resize);
+    }, []);
+
+    return (
+        <Box position="fixed" top="0" left="0" zIndex="-1">
+            <canvas ref={canvasRef} />
+        </Box>
+    );
+};
+
+export default DynamicBackground;import React, { useState, useEffect } from 'react';
+import { Box, Button, VStack, HStack, Text, Select, Input, useToast } from '@chakra-ui/react';
+import { motion, Reorder } from 'framer-motion';
+import { v4 as uuidv4 } from 'uuid';
+
+type WidgetType = 'text' | 'number' | 'chart';
+
+interface Widget {
+  id: string;
+  type: WidgetType;
+  title: string;
+  content: string;
+}
+
+const WidgetComponent: React.FC<{ widget: Widget; onEdit: (id: string, content: string) => void }> = ({ widget, onEdit }) => {
+  const [editing, setEditing] = useState(false);
+  const [editContent, setEditContent] = useState(widget.content);
+
+  const handleSave = () => {
+    onEdit(widget.id, editContent);
+    setEditing(false);
+  };
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 50 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -50 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+    >
+      <Box borderWidth="1px" borderRadius="lg" p={4} mb={4} bg="white">
+        <Text fontWeight="bold" mb={2}>{widget.title}</Text>
+        {editing ? (
+          <VStack>
+            <Input value={editContent} onChange={(e) => setEditContent(e.target.value)} />
+            <Button onClick={handleSave}>Salva</Button>
+          </VStack>
+        ) : (
+          <VStack align="start">
+            {widget.type === 'text' && <Text>{widget.content}</Text>}
+            {widget.type === 'number' && <Text fontSize="2xl" fontWeight="bold">{widget.content}</Text>}
+            {widget.type === 'chart' && <Text>Qui verrebbe visualizzato un grafico basato su: {widget.content}</Text>}
+            <Button size="sm" onClick={() => setEditing(true)}>Modifica</Button>
+          </VStack>
+        )}
+      </Box>
+    </motion.div>
+  );
+};
+
+const DynamicDashboard: React.FC = () => {
+  const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [newWidgetType, setNewWidgetType] = useState<WidgetType>('text');
+  const [newWidgetTitle, setNewWidgetTitle] = useState('');
+  const toast = useToast();
+
+  useEffect(() => {
+    const savedWidgets = localStorage.getItem('dashboardWidgets');
+    if (savedWidgets) {
+      setWidgets(JSON.parse(savedWidgets));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('dashboardWidgets', JSON.stringify(widgets));
+  }, [widgets]);
+
+  const addWidget = () => {
+    if (!newWidgetTitle) {
+      toast({
+        title: "Errore",
+        description: "Il titolo del widget non può essere vuoto",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+    const newWidget: Widget = {
+      id: uuidv4(),
+      type: newWidgetType,
+      title: newWidgetTitle,
+      content: '',
+    };
+    setWidgets([...widgets, newWidget]);
+    setNewWidgetTitle('');
+  };
+
+  const editWidget = (id: string, content: string) => {
+    setWidgets(widgets.map(w => w.id === id ? { ...w, content } : w));
+  };
+
+  const removeWidget = (id: string) => {
+    setWidgets(widgets.filter(w => w.id !== id));
+  };
+
+  return (
+    <VStack spacing={4} align="stretch">
+      <HStack>
+        <Select value={newWidgetType} onChange={(e) => setNewWidgetType(e.target.value as WidgetType)}>
+          <option value="text">Testo</option>
+          <option value="number">Numero</option>
+          <option value="chart">Grafico</option>
+        </Select>
+        <Input 
+          placeholder="Titolo del widget" 
+          value={newWidgetTitle} 
+          onChange={(e) => setNewWidgetTitle(e.target.value)}
+        />
+        <Button onClick={addWidget}>Aggiungi Widget</Button>
+      </HStack>
+      <Reorder.Group axis="y" values={widgets} onReorder={setWidgets}>
+        {widgets.map((widget) => (
+          <Reorder.Item key={widget.id} value={widget}>
+            <motion.div
+              layout
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+            >
+              <HStack justify="space-between" mb={2}>
+                <Text fontWeight="bold">{widget.title}</Text>
+                <Button size="sm" onClick={() => removeWidget(widget.id)}>Rimuovi</Button>
+              </HStack>
+              <WidgetComponent widget={widget} onEdit={editWidget} />
+            </motion.div>
+          </Reorder.Item>
+        ))}
+      </Reorder.Group>
+    </VStack>
+  );
+};
+
+export default DynamicDashboard;
+import React, { useState, useRef, useEffect } from 'react';
+import { Box, Button, Input, VStack, HStack, Text, useToast, useMediaQuery, useColorModeValue } from '@chakra-ui/react';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { v4 as uuidv4 } from 'uuid';
+
+interface Node {
+  id: string;
+  content: string;
+  x: number;
+  y: number;
+}
+
+interface Connection {
+  source: string;
+  target: string;
+}
+
+const LOCAL_STORAGE_KEY = 'mindMapData';
+
+const InteractiveMindMap: React.FC = () => {
+  const [nodes, setNodes] = useState<Node[]>([]);
+  const [connections, setConnections] = useState<Connection[]>([]);
+  const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
+  const [newNodeContent, setNewNodeContent] = useState('');
+  const [scale, setScale] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const toast = useToast();
+  const [isMobile] = useMediaQuery("(max-width: 768px)");
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const mapX = useTransform(x, (value) => value / scale);
+  const mapY = useTransform(y, (value) => value / scale);
+
+  useEffect(() => {
+    const savedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (savedData) {
+      const { nodes: savedNodes, connections: savedConnections } = JSON.parse(savedData);
+      setNodes(savedNodes);
+      setConnections(savedConnections);
+    }
+  }, []);
+
+  useEffect(() => {
+    const dataToSave = { nodes, connections };
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(dataToSave));
+  }, [nodes, connections]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' && selectedNodes.length > 0) {
+        deleteSelectedNodes();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [selectedNodes]);
+
+  const addNode = () => {
+    if (newNodeContent.trim() === '') {
+      toast({
+        title: 'Errore',
+        description: 'Il contenuto del nodo non può essere vuoto',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    const newNode: Node = {
+      id: uuidv4(),
+      content: newNodeContent,
+      x: Math.random() * 300,
+      y: Math.random() * 300,
+    };
+
+    setNodes(prevNodes => [...prevNodes, newNode]);
+    setNewNodeContent('');
+  };
+
+  const updateNodePosition = (id: string, x: number, y: number) => {
+    setNodes(prevNodes => prevNodes.map(node => node.id === id ? { ...node, x, y } : node));
+  };
+
+  const toggleNodeSelection = (id: string) => {
+    setSelectedNodes(prev =>
+      prev.includes(id) ? prev.filter(nodeId => nodeId !== id) : [...prev, id]
+    );
+  };
+
+  const connectNodes = () => {
+    if (selectedNodes.length !== 2) {
+      toast({
+        title: 'Errore',
+        description: 'Seleziona esattamente due nodi per collegarli',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
+    }
+
+    const [source, target] = selectedNodes;
+    const newConnection: Connection = { source, target };
+    setConnections([...connections, newConnection]);
+    setSelectedNodes([]);
+  };
+
+  const deleteSelectedNodes = () => {
+    setNodes(nodes.filter(node => !selectedNodes.includes(node.id)));
+    setConnections(connections.filter(
+      conn => !selectedNodes.includes(conn.source) && !selectedNodes.includes(conn.target)
+    ));
+    setSelectedNodes([]);
+  };
+
+  const handleZoom = (direction: 'in' | 'out') => {
+    setScale(prev => Math.max(0.5, Math.min(2, prev + (direction === 'in' ? 0.1 : -0.1))));
+  };
+
+  const resetMindMap = () => {
+    setNodes([]);
+    setConnections([]);
+    setSelectedNodes([]);
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    toast({
+      title: 'Mappa mentale resettata',
+      description: 'Tutti i nodi e le connessioni sono stati eliminati',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+
+  return (
+      <Box  borderWidth="1px"
+            borderRadius="lg" bg={bgColor}
+            borderColor={borderColor} p={4}  w="100%"  >
+        <VStack spacing={4} align="stretch" w="100%" h={isMobile ? "100vh" : "600px"} >
+          {isMobile ? (
+              <VStack spacing={2} w="100%">
+                <Input
+                    value={newNodeContent}
+                    onChange={(e) => setNewNodeContent(e.target.value)}
+                    placeholder="Contenuto del nuovo nodo"
+                />
+                <Button onClick={addNode} w="100%">Aggiungi Nodo</Button>
+                <Button onClick={connectNodes} isDisabled={selectedNodes.length !== 2} w="100%">
+                  Collega Nodi
+                </Button>
+                <Button onClick={deleteSelectedNodes} isDisabled={selectedNodes.length === 0} w="100%">
+                  Elimina Nodi Selezionati
+                </Button>
+                <HStack w="100%">
+                  <Button onClick={() => handleZoom('in')} flex={1}>Zoom In</Button>
+                  <Button onClick={() => handleZoom('out')} flex={1}>Zoom Out</Button>
+                </HStack>
+                <Button onClick={resetMindMap} colorScheme="red" w="100%">Reset</Button>
+              </VStack>
+          ) : (
+              <HStack>
+                <Input
+                    value={newNodeContent}
+                    onChange={(e) => setNewNodeContent(e.target.value)}
+                    placeholder="Contenuto del nuovo nodo"
+                />
+                <Button onClick={addNode}>Aggiungi Nodo</Button>
+                <Button onClick={connectNodes} isDisabled={selectedNodes.length !== 2}>
+                  Collega Nodi
+                </Button>
+                <Button onClick={deleteSelectedNodes} isDisabled={selectedNodes.length === 0}>
+                  Elimina Nodi Selezionati
+                </Button>
+                <Button onClick={() => handleZoom('in')}>Zoom In</Button>
+                <Button onClick={() => handleZoom('out')}>Zoom Out</Button>
+                <Button onClick={resetMindMap} colorScheme="red">Reset</Button>
+              </HStack>
+          )}
+          <Box
+              ref={containerRef}
+              position="relative"
+              overflow="hidden"
+              border="1px solid"
+              borderColor="gray.200"
+              borderRadius="md"
+              h={isMobile ? "calc(100vh - 280px)" : "100%"}
+          >
+            <motion.div
+                style={{
+                  x: mapX,
+                  y: mapY,
+                  scale,
+                }}
+                drag
+                dragConstraints={containerRef}
+            >
+              {connections.map((conn, index) => {
+                const sourceNode = nodes.find(node => node.id === conn.source);
+                const targetNode = nodes.find(node => node.id === conn.target);
+                if (!sourceNode || !targetNode) return null;
+
+                return (
+                    <svg key={index} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}>
+                      <line
+                          x1={sourceNode.x + 50}
+                          y1={sourceNode.y + 25}
+                          x2={targetNode.x + 50}
+                          y2={targetNode.y + 25}
+                          stroke="gray"
+                          strokeWidth="2"
+                      />
+                    </svg>
+                );
+              })}
+              {nodes.map((node) => (
+                  <motion.div
+                      key={node.id}
+                      style={{
+                        position: 'absolute',
+                        top: node.y,
+                        left: node.x,
+                        background: selectedNodes.includes(node.id) ? 'lightblue' : 'gray.400',
+                        border: '1px solid gray',
+                        borderRadius: '4px',
+                        padding: '10px',
+                        cursor: 'move',
+                        userSelect: 'none',
+                      }}
+                      drag
+                      dragMomentum={false}
+                      onDrag={(_, info) => {
+                        updateNodePosition(node.id, node.x + info.delta.x / scale, node.y + info.delta.y / scale);
+                      }}
+                      onClick={() => toggleNodeSelection(node.id)}
+                  >
+                    <Text>{node.content}</Text>
+                  </motion.div>
+              ))}
+            </motion.div>
+          </Box>
+        </VStack>
+
+      </Box>
+  );
+};
+
+export default InteractiveMindMap;import React, { useState } from 'react';
+import {
+  Box,
+  Text,
+  VStack,
+  Select,
+  useColorModeValue,
+  Button,
+} from '@chakra-ui/react';
+
+interface MoodColor {
+  [key: string]: string;
+}
+
+const moodColors: MoodColor = {
+  happy: 'yellow.200',
+  sad: 'blue.200',
+  excited: 'orange.200',
+  calm: 'green.200',
+  angry: 'red.200',
+  confused: 'purple.200',
+  tired: 'gray.200',
+  inspired: 'cyan.200',
+  anxious: 'teal.200',
+  mischievous: 'pink.200',
+  confident: 'gold.200',
+  curious: 'lime.200',
+};
+
+const moodPhrases: {[key:string]:string[]} = {
+  happy: [
+    "You're shining brighter than a disco ball!",
+    "Your smile could power a small city!",
+    "You're so cheerful, flowers are jealous!",
+    "Happiness looks gorgeous on you!",
+    "You're walking on sunshine, and don't it feel good?",
+  ],
+  sad: [
+    "Cheer up, even rain clouds get tired and go away!",
+    "You're just having a bad day, not a bad life!",
+    "Remember, every cloud has a silver lining... and free water!",
+    "It's okay to be sad. Your tears are watering the seeds of your future happiness.",
+    "You're not alone. Even the Mona Lisa has off days.",
+  ],
+  excited: [
+    "Calm down! You're more hyper than a squirrel on espresso!",
+    "Your enthusiasm is so contagious, it should be quarantined!",
+    "You're so excited, you make caffeine look like a sedative!",
+    "Whoa there, Tigger! Save some bounce for the rest of us!",
+    "Your excitement could power a rocket to the moon and back!",
+  ],
+  calm: [
+    "You're so zen, Buddha is asking for tips!",
+    "Your calmness is making waves... very small, peaceful waves.",
+    "You're so relaxed, sloths think you're their spirit animal!",
+    "If tranquility were an Olympic sport, you'd be a gold medalist.",
+    "Your inner peace is so strong, it's causing world peace!",
+  ],
+  angry: [
+    "Take a deep breath. Count to ten. If that doesn't work, try pi.",
+    "You're so hot-headed, you could fry an egg on your forehead!",
+    "Your anger is valid, but have you tried turning it off and on again?",
+    "You're not angry, you're just passionate about being displeased.",
+    "Channel that anger into productivity. You could probably build a house with all that energy!",
+  ],
+  confused: [
+    "You're so confused, even your confusion is confused!",
+    "Don't worry, being confused means you're still learning.",
+    "You're not confused, you're just too smart for simple answers.",
+    "Confusion is the first step to understanding. You're on your way!",
+    "Your brain isn't confused, it's just doing complex yoga poses.",
+  ],
+  tired: [
+    "You're so tired, coffee is asking YOU for a boost!",
+    "Even your yawns are yawning.",
+    "You're not tired, you're just operating in power-saving mode.",
+    "Your energy levels are so low, sloths are offering you pep talks.",
+    "Don't worry, being tired means you've been awesome all day!",
+  ],
+  inspired: [
+    "Your ideas are so bright, I need sunglasses!",
+    "You're on fire! (Not literally, thankfully.)",
+    "Your creativity is off the charts. Time to buy a bigger chart!",
+    "You're so inspired, even muses are taking notes.",
+    "Watch out world, a genius is having a lightbulb moment!",
+  ],
+  anxious: [
+    "Take a deep breath. Your anxiety is lying to you.",
+    "You're stronger than your anxiety. And probably stronger than a small horse.",
+    "Your anxiety is just excitement in disguise. You're secretly thrilled about everything!",
+    "Anxiety is your body's way of saying, 'Hey, I really care about this!'",
+    "You've got this. Your anxiety doesn't stand a chance against your awesomeness.",
+  ],
+  mischievous: [
+    "I see that twinkle in your eye. What are you planning?",
+    "You're so mischievous, even troublemakers are taking notes.",
+    "That grin of yours is making angels nervous.",
+    "I bet you're the reason why we can't have nice things!",
+    "Your mischief managed to make Loki jealous.",
+  ],
+  confident: [
+    "Your confidence is so high, mountains look up to you!",
+    "You're not confident, you're con-fantastic!",
+    "With that level of confidence, you could probably convince water to run uphill.",
+    "Your self-assurance is making the sun feel insecure about its brightness.",
+    "You're so sure of yourself, doubt is doubting itself around you.",
+  ],
+  curious: [
+    "Your curiosity could give cats a run for their money!",
+    "You're so curious, even mysteries want to solve you.",
+    "Your thirst for knowledge is making libraries nervous.",
+    "With that level of curiosity, you'll probably discover a new element soon.",
+    "You're not nosy, you're just collecting information for your autobiography!",
+  ],
+};
+
+const MoodColorizer: React.FC = () => {
+  const [mood, setMood] = useState<string>('happy');
+  const [phrase, setPhrase] = useState<string>(moodPhrases.happy[0]);
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+
+  const handleMoodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newMood = event.target.value;
+    setMood(newMood);
+    const phrases = moodPhrases[newMood];
+    setPhrase(phrases[Math.floor(Math.random() * phrases.length)]);
+  };
+
+  const generateNewPhrase = () => {
+    const phrases = moodPhrases[mood];
+    setPhrase(phrases[Math.floor(Math.random() * phrases.length)]);
+  };
+
+  return (
+  <Box
+    borderWidth="1px"
+    borderRadius="lg"
+    p={4}
+    width={{ base: '100%', md: '300px' }}
+    bg={bgColor}
+    borderColor={borderColor}
+  >
+    <VStack spacing={4} align="stretch">
+      <Text fontSize="xl" fontWeight="bold">
+        Mood Colorizer
+      </Text>
+      <Select value={mood} onChange={handleMoodChange}>
+        {Object.keys(moodColors).map((moodOption) => (
+          <option key={moodOption} value={moodOption}>
+            {moodOption.charAt(0).toUpperCase() + moodOption.slice(1)}
+          </option>
+        ))}
+      </Select>
+      <Box
+        bg={moodColors[mood]}
+        p={4}
+        borderRadius="md"
+        minHeight="100px"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <Text textAlign="center" fontWeight="bold">
+          {phrase}
+        </Text>
+      </Box>
+      <Button onClick={generateNewPhrase}>New Phrase</Button>
+    </VStack>
+  </Box>
+);
+}
+export default MoodColorizer;import React, { useState, useEffect, useRef } from 'react';
+import {
+  Box,
+  VStack,
+  Text,
+  Textarea,
+  Button,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  HStack,
+  useColorModeValue,
+} from '@chakra-ui/react';
+
+interface Note {
+  frequency: number;
+  duration: number;
+}
+
+const MoodMusicMixer: React.FC = () => {
+  const [text, setText] = useState('');
+  const [mood, setMood] = useState(0);
+  const [melody, setMelody] = useState<Note[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [tempo, setTempo] = useState(120);
+
+  const audioContext = useRef<AudioContext | null>(null);
+  const bgColor = useColorModeValue('gray.100', 'gray.700');
+  const textColor = useColorModeValue('gray.800', 'gray.100');
+
+  useEffect(() => {
+    audioContext.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    return () => {
+      if (audioContext.current) {
+        audioContext.current.close();
+      }
+    };
+  }, []);
+
+  const analyzeMood = () => {
+    // Semplice analisi del sentiment basata sulle parole chiave
+    const happyWords = ['felice', 'gioioso', 'entusiasta', 'eccitato', 'ottimista'];
+    const sadWords = ['triste', 'depresso', 'infelice', 'deluso', 'sconfortato'];
+    
+    const words = text.toLowerCase().split(/\s+/);
+    const happyScore = words.filter(word => happyWords.includes(word)).length;
+    const sadScore = words.filter(word => sadWords.includes(word)).length;
+    
+    const newMood = (happyScore - sadScore) / words.length;
+    setMood(newMood);
+    generateMelody(newMood);
+  };
+
+  const generateMelody = (moodScore: number) => {
+    const baseFrequency = 261.63; // C4
+    const scale = moodScore > 0 
+      ? [0, 2, 4, 5, 7, 9, 11] // Major scale
+      : [0, 2, 3, 5, 7, 8, 10]; // Minor scale
+
+    const newMelody: Note[] = [];
+    for (let i = 0; i < 8; i++) {
+      const scaleIndex = Math.floor(Math.random() * scale.length);
+      const octave = Math.floor(Math.random() * 2);
+      const frequency = baseFrequency * Math.pow(2, (scale[scaleIndex] + octave * 12) / 12);
+      const duration = Math.random() * 0.3 + 0.1;
+      newMelody.push({ frequency, duration });
+    }
+    setMelody(newMelody);
+  };
+
+  const playMelody = () => {
+    if (!audioContext.current) return;
+    setIsPlaying(true);
+    
+    let startTime = audioContext.current.currentTime;
+    melody.forEach((note) => {
+      const oscillator = audioContext.current!.createOscillator();
+      const gainNode = audioContext.current!.createGain();
+      
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(note.frequency, startTime);
+      
+      gainNode.gain.setValueAtTime(0.5, startTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + note.duration);
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.current!.destination);
+      
+      oscillator.start(startTime);
+      oscillator.stop(startTime + note.duration);
+      
+      startTime += note.duration;
+    });
+
+    setTimeout(() => setIsPlaying(false), startTime * 1000);
+  };
+
+  return (
+    <Box p={5} borderRadius="md" bg={bgColor} maxWidth="500px">
+      <VStack spacing={4} align="stretch">
+        <Text fontSize="2xl" fontWeight="bold" color={textColor}>Mood Music Mixer</Text>
+        <Textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Scrivi qualcosa sul tuo umore..."
+          resize="vertical"
+          minHeight="100px"
+        />
+        <Button onClick={analyzeMood} colorScheme="blue">Analizza Umore e Genera Melodia</Button>
+        <Text color={textColor}>Umore rilevato: {mood.toFixed(2)} ({mood > 0 ? 'Positivo' : 'Negativo'})</Text>
+        <HStack>
+          <Text color={textColor}>Tempo: {tempo} BPM</Text>
+          <Slider
+            value={tempo}
+            min={60}
+            max={180}
+            step={1}
+            onChange={setTempo}
+          >
+            <SliderTrack>
+              <SliderFilledTrack />
+            </SliderTrack>
+            <SliderThumb />
+          </Slider>
+        </HStack>
+        <Button
+          onClick={playMelody}
+          isDisabled={melody.length === 0 || isPlaying}
+          colorScheme="green"
+        >
+          {isPlaying ? 'Riproduzione in corso...' : 'Riproduci Melodia'}
+        </Button>
+      </VStack>
+    </Box>
+  );
+};
+
+export default MoodMusicMixer;import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  Box,
+  Button,
+  VStack,
+  HStack,
+  Text,
+  Slider,
+  SliderTrack,
+  SliderFilledTrack,
+  SliderThumb,
+  useColorModeValue,
+} from '@chakra-ui/react';
+
+interface Neuron {
+  x: number;
+  y: number;
+  connections: number[];
+  activation: number;
+}
+
+const useResizeObserver = (ref: React.RefObject<HTMLElement>) => {
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+
+  useEffect(() => {
+    const observeTarget = ref.current;
+    if (!observeTarget) return;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      entries.forEach(entry => {
+        setDimensions({
+          width: entry.contentRect.width,
+          height: entry.contentRect.height,
+        });
+      });
+    });
+
+    resizeObserver.observe(observeTarget);
+
+    return () => {
+      resizeObserver.unobserve(observeTarget);
+    };
+  }, [ref]);
+
+  return dimensions;
+};
+
+const NeuroNetVisualizer: React.FC = () => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [neurons, setNeurons] = useState<Neuron[]>([]);
+  const [learningRate, setLearningRate] = useState(0.1);
+  const [iterations, setIterations] = useState(0);
+  
+  const { width, height } = useResizeObserver(containerRef);
+
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const textColor = useColorModeValue('gray.800', 'white');
+
+  const initializeNeurons = useCallback(() => {
+    const newNeurons: Neuron[] = [];
+    for (let i = 0; i < 20; i++) {
+      newNeurons.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        connections: [],
+        activation: Math.random(),
+      });
+    }
+    // Create random connections
+    newNeurons.forEach((neuron, i) => {
+      for (let j = 0; j < 3; j++) {
+        const target = Math.floor(Math.random() * newNeurons.length);
+        if (target !== i && !neuron.connections.includes(target)) {
+          neuron.connections.push(target);
+        }
+      }
+    });
+    setNeurons(newNeurons);
+  }, [width, height]);
+
+  useEffect(() => {
+    if (width > 0 && height > 0) {
+      initializeNeurons();
+    }
+  }, [width, height, initializeNeurons]);
+
+  useEffect(() => {
+    drawNetwork();
+  }, [neurons, iterations, width, height]);
+
+  const drawNetwork = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    canvas.width = width;
+    canvas.height = height;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw connections
+    neurons.forEach((neuron, i) => {
+      neuron.connections.forEach(target => {
+        ctx.beginPath();
+        ctx.moveTo(neuron.x, neuron.y);
+        ctx.lineTo(neurons[target].x, neurons[target].y);
+        ctx.strokeStyle = `rgba(255, 255, 255, ${neuron.activation})`;
+        ctx.lineWidth = neuron.activation * 3;
+        ctx.stroke();
+      });
+    });
+
+    // Draw neurons
+    neurons.forEach(neuron => {
+      ctx.beginPath();
+      ctx.arc(neuron.x, neuron.y, 10, 0, 2 * Math.PI);
+      ctx.fillStyle = `rgb(${neuron.activation * 255}, 100, 100)`;
+      ctx.fill();
+    });
+  };
+
+  const updateNetwork = () => {
+    setNeurons(prevNeurons => {
+      return prevNeurons.map(neuron => {
+        const inputSum = neuron.connections.reduce((sum, target) => {
+          return sum + prevNeurons[target].activation;
+        }, 0);
+        const newActivation = Math.tanh(inputSum * learningRate);
+        return { ...neuron, activation: newActivation };
+      });
+    });
+    setIterations(prev => prev + 1);
+  };
+
+  const handleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+
+    setNeurons(prevNeurons => {
+      return prevNeurons.map(neuron => {
+        const distance = Math.sqrt((neuron.x - x) ** 2 + (neuron.y - y) ** 2);
+        if (distance < 50) {
+          return { ...neuron, activation: 1 };
+        }
+        return neuron;
+      });
+    });
+  };
+
+  return (
+    <Box
+      ref={containerRef}
+      borderWidth="1px"
+      borderRadius="lg"
+      p={4}
+      width="100%"
+      height="600px"
+      bg={bgColor}
+      borderColor={borderColor}
+    >
+      <VStack spacing={4} align="stretch" height="100%">
+        <Text fontSize="xl" fontWeight="bold" color={textColor}>NeuroNet Visualizer</Text>
+        <Box flexGrow={1} position="relative">
+          <Box
+            as="canvas"
+            ref={canvasRef}
+            position="absolute"
+            top={0}
+            left={0}
+            width="100%"
+            height="100%"
+            onClick={handleClick}
+            cursor="pointer"
+            bg="gray.900"
+          />
+        </Box>
+        <HStack>
+          <Button onClick={updateNetwork} colorScheme="blue">Update Network</Button>
+          <Button onClick={initializeNeurons} colorScheme="green">Reset</Button>
+        </HStack>
+        <HStack>
+          <Text color={textColor}>Learning Rate:</Text>
+          <Slider
+            value={learningRate}
+            min={0.01}
+            max={1}
+            step={0.01}
+            onChange={setLearningRate}
+          >
+            <SliderTrack>
+              <SliderFilledTrack />
+            </SliderTrack>
+            <SliderThumb />
+          </Slider>
+          <Text color={textColor}>{learningRate.toFixed(2)}</Text>
+        </HStack>
+        <Text color={textColor}>Iterations: {iterations}</Text>
+      </VStack>
+    </Box>
+  );
+};
+
+export default NeuroNetVisualizer;import React, { useState, useEffect } from 'react';
+import { Box, Text, VStack, Input, Button, UnorderedList, ListItem, Link, IconButton, Spinner, HStack, useColorModeValue } from '@chakra-ui/react';
+import { SettingsIcon, RepeatIcon } from '@chakra-ui/icons';
+
+interface FeedItem {
+    title: string;
+    link: string;
+    pubDate: string;
+}
+
+const NewsCard: React.FC = () => {
+    const [feeds, setFeeds] = useState<string[]>([]);
+    const [newFeed, setNewFeed] = useState('');
+    const [news, setNews] = useState<FeedItem[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [showSettings, setShowSettings] = useState(false);
+    const bgColor = useColorModeValue('white', 'gray.700');
+    const borderColor = useColorModeValue('gray.200', 'gray.600');
+    useEffect(() => {
+        const savedFeeds = localStorage.getItem('rssFeeds');
+        if (savedFeeds) {
+            const parsedFeeds = JSON.parse(savedFeeds);
+            setFeeds(parsedFeeds);
+            fetchAllFeeds(parsedFeeds);
+        }
+    }, []);
+
+    const addFeed = () => {
+        if (newFeed && !feeds.includes(newFeed)) {
+            const updatedFeeds = [...feeds, newFeed];
+            setFeeds(updatedFeeds);
+            setNewFeed('');
+            localStorage.setItem('rssFeeds', JSON.stringify(updatedFeeds));
+            fetchAllFeeds(updatedFeeds);
+        }
+    };
+
+    const removeFeed = (feedToRemove: string) => {
+        const updatedFeeds = feeds.filter(feed => feed !== feedToRemove);
+        setFeeds(updatedFeeds);
+        localStorage.setItem('rssFeeds', JSON.stringify(updatedFeeds));
+        fetchAllFeeds(updatedFeeds);
+    };
+
+    const fetchFeed = async (url: string) => {
+        const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
+        if (!response.ok) {
+            throw new Error(`Errore nel recupero del feed: ${url}`);
+        }
+        const data = await response.json();
+        return data.items.map((item: any) => ({
+            title: item.title,
+            link: item.link,
+            pubDate: new Date(item.pubDate).toISOString(),
+        }));
+    };
+
+    const fetchAllFeeds = async (feedUrls: string[]) => {
+        setLoading(true);
+        setError('');
+        try {
+            const allItems = await Promise.all(feedUrls.map(fetchFeed));
+            const flattenedItems = allItems.flat();
+            const sortedItems = flattenedItems.sort((a, b) =>
+                new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+            );
+            setNews(sortedItems.slice(0, 10));
+        } catch (err) {
+            setError('Errore nel recupero dei feed. Verifica gli URL.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const refetchNews = () => {
+        fetchAllFeeds(feeds);
+    };
+
+    return (
+        <Box borderWidth="1px" borderRadius="lg" p={4} width="300px" position="relative"   bg={bgColor}
+             borderColor={borderColor}>
+            <HStack position="absolute" top={2} right={2}>
+                <IconButton
+                    aria-label="Aggiorna notizie"
+                    icon={<RepeatIcon />}
+                    size="sm"
+                    onClick={refetchNews}
+                    isDisabled={loading}
+                />
+                <IconButton
+                    aria-label="Impostazioni"
+                    icon={<SettingsIcon />}
+                    size="sm"
+                    onClick={() => setShowSettings(!showSettings)}
+                />
+            </HStack>
+            <VStack align="start" spacing={4}>
+                <Text fontSize="xl" fontWeight="bold">Notizie RSS</Text>
+                {showSettings ? (
+                    <>
+                        <Input
+                            placeholder="Aggiungi un nuovo feed RSS"
+                            value={newFeed}
+                            onChange={(e) => setNewFeed(e.target.value)}
+                        />
+                        <Button onClick={addFeed} isDisabled={loading}>
+                            Aggiungi Feed
+                        </Button>
+                        <Text fontWeight="bold">Feed attivi:</Text>
+                        <UnorderedList>
+                            {feeds.map((feed, index) => (
+                                <ListItem key={index}>
+                                    {feed}
+                                    <Button size="xs" ml={2} onClick={() => removeFeed(feed)}>
+                                        Rimuovi
+                                    </Button>
+                                </ListItem>
+                            ))}
+                        </UnorderedList>
+                    </>
+                ) : (
+                    <>
+                        {loading && <Spinner />}
+                        {error && <Text color="red.500">{error}</Text>}
+                        {news.length > 0 ? (
+                            <UnorderedList>
+                                {news.map((item, index) => (
+                                    <ListItem key={index}>
+                                        <Link href={item.link} isExternal>
+                                            {item.title}
+                                        </Link>
+                                    </ListItem>
+                                ))}
+                            </UnorderedList>
+                        ) : (
+                            <Text>Nessuna notizia disponibile</Text>
+                        )}
+                    </>
+                )}
+            </VStack>
+        </Box>
+    );
+};
+
+export default NewsCard;import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Text,
+  Button,
+  VStack,
+  HStack,
+  CircularProgress,
+  CircularProgressLabel,
+  useColorModeValue,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
+} from '@chakra-ui/react';
+
+const PomodoroTimer: React.FC = () => {
+  const [workTime, setWorkTime] = useState(() => {
+    const saved = localStorage.getItem('pomodoroWorkTime');
+    return saved ? parseInt(saved) : 25;
+  });
+  const [breakTime, setBreakTime] = useState(() => {
+    const saved = localStorage.getItem('pomodoroBreakTime');
+    return saved ? parseInt(saved) : 5;
+  });
+  const [time, setTime] = useState(workTime * 60);
+  const [isActive, setIsActive] = useState(false);
+  const [isWork, setIsWork] = useState(true);
+
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+
+  useEffect(() => {
+    localStorage.setItem('pomodoroWorkTime', workTime.toString());
+    localStorage.setItem('pomodoroBreakTime', breakTime.toString());
+  }, [workTime, breakTime]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (isActive && time > 0) {
+      interval = setInterval(() => {
+        setTime((prevTime) => prevTime - 1);
+      }, 1000);
+    } else if (time === 0) {
+      if (isWork) {
+        setTime(breakTime * 60);
+        setIsWork(false);
+      } else {
+        setTime(workTime * 60);
+        setIsWork(true);
+      }
+      setIsActive(false);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isActive, time, isWork, workTime, breakTime]);
+
+  const toggleTimer = () => {
+    setIsActive(!isActive);
+  };
+
+  const resetTimer = () => {
+    setIsActive(false);
+    setTime(isWork ? workTime * 60 : breakTime * 60);
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+  };
+
+  const progress = isWork
+    ? ((workTime * 60 - time) / (workTime * 60)) * 100
+    : ((breakTime * 60 - time) / (breakTime * 60)) * 100;
+
+  const handleWorkTimeChange = (value: number) => {
+    setWorkTime(value);
+    if (isWork) {
+      setTime(value * 60);
+    }
+  };
+
+  const handleBreakTimeChange = (value: number) => {
+    setBreakTime(value);
+    if (!isWork) {
+      setTime(value * 60);
+    }
+  };
+
+  return (
+    <Box
+      borderWidth="1px"
+      borderRadius="lg"
+      p={4}
+      width={{ base: '100%', md: '300px' }}
+      bg={bgColor}
+      borderColor={borderColor}
+    >
+      <VStack spacing={4} align="stretch">
+        <Text fontSize="xl" fontWeight="bold">
+          Pomodoro Timer
+        </Text>
+        <CircularProgress value={progress} size="120px" thickness="4px">
+          <CircularProgressLabel>{formatTime(time)}</CircularProgressLabel>
+        </CircularProgress>
+        <Text textAlign="center">{isWork ? 'Work' : 'Break'}</Text>
+        <HStack justify="center">
+          <Button onClick={toggleTimer}>{isActive ? 'Pause' : 'Start'}</Button>
+          <Button onClick={resetTimer}>Reset</Button>
+        </HStack>
+        <HStack justify="space-between">
+          <Text>Work Time (min):</Text>
+          <NumberInput
+            value={workTime}
+            onChange={(_, value) => handleWorkTimeChange(value)}
+            min={1}
+            max={60}
+            w="80px"
+          >
+            <NumberInputField />
+            <NumberInputStepper>
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
+        </HStack>
+        <HStack justify="space-between">
+          <Text>Break Time (min):</Text>
+          <NumberInput
+            value={breakTime}
+            onChange={(_, value) => handleBreakTimeChange(value)}
+            min={1}
+            max={30}
+            w="80px"
+          >
+            <NumberInputField />
+            <NumberInputStepper>
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
+        </HStack>
+      </VStack>
+    </Box>
+  );
+};
+
+export default PomodoroTimer;import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Text,
+  Button,
+  VStack,
+  useColorModeValue,
+  Spinner,
+} from '@chakra-ui/react';
+
+interface Quote {
+  text: string;
+  author: string;
+}
+
+const QuoteGenerator: React.FC = () => {
+  const [quote, setQuote] = useState<Quote | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+
+  const fetchQuote = async () => {
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://api.quotable.io/random');
+      const data = await response.json();
+      setQuote({ text: data.content, author: data.author });
+    } catch (error) {
+      console.error('Error fetching quote:', error);
+      setQuote({ text: 'Failed to fetch quote', author: 'Error' });
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    fetchQuote();
+  }, []);
+
+  return (
+    <Box
+      borderWidth="1px"
+      borderRadius="lg"
+      p={4}
+      width={{ base: '100%', md: '300px' }}
+      bg={bgColor}
+      borderColor={borderColor}
+    >
+      <VStack spacing={4} align="stretch">
+        <Text fontSize="xl" fontWeight="bold">
+          Quote of the Day
+        </Text>
+        {isLoading ? (
+          <Spinner />
+        ) : (
+          <>
+            <Text fontSize="md" fontStyle="italic">
+              "{quote?.text}"
+            </Text>
+            <Text fontSize="sm" textAlign="right">
+              - {quote?.author}
+            </Text>
+          </>
+        )}
+        <Button onClick={fetchQuote} isLoading={isLoading}>
+          New Quote
+        </Button>
+      </VStack>
+    </Box>
+  );
+};
+
+export default QuoteGenerator;import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  VStack,
+  HStack,
+  Text,
+  Input,
+  Button,
+  List,
+  ListItem,
+  IconButton,
+  Checkbox,
+  useColorModeValue,
+} from '@chakra-ui/react';
+import { DeleteIcon } from '@chakra-ui/icons';
+
+interface Todo {
+  id: number;
+  text: string;
+  completed: boolean;
+}
+
+const TodoList: React.FC = () => {
+  const [todos, setTodos] = useState<Todo[]>([]);
+  const [inputValue, setInputValue] = useState('');
+
+  useEffect(() => {
+    const savedTodos = localStorage.getItem('todos');
+    if (savedTodos) {
+      setTodos(JSON.parse(savedTodos));
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('todos', JSON.stringify(todos));
+  }, [todos]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
+  const handleAddTodo = () => {
+    if (inputValue.trim() !== '') {
+      const newTodo: Todo = {
+        id: Date.now(),
+        text: inputValue.trim(),
+        completed: false,
+      };
+      setTodos([...todos, newTodo]);
+      setInputValue('');
+    }
+  };
+
+  const handleDeleteTodo = (id: number) => {
+    setTodos(todos.filter((todo) => todo.id !== id));
+  };
+
+  const handleToggleTodo = (id: number) => {
+    setTodos(
+      todos.map((todo) =>
+        todo.id === id ? { ...todo, completed: !todo.completed } : todo
+      )
+    );
+  };
+
+  const bgColor = useColorModeValue('white', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+
+  return (
+    <Box
+      borderWidth="1px"
+      borderRadius="lg"
+      p={4}
+      width={{ base: '100%', md: '300px' }}
+      bg={bgColor}
+      borderColor={borderColor}
+    >
+      <VStack spacing={4} align="stretch">
+        <Text fontSize="xl" fontWeight="bold">
+          Todo List
+        </Text>
+        <HStack>
+          <Input
+            value={inputValue}
+            onChange={handleInputChange}
+            placeholder="Add a new todo"
+          />
+          <Button onClick={handleAddTodo}>Add</Button>
+        </HStack>
+        <List spacing={2}>
+          {todos.map((todo) => (
+            <ListItem key={todo.id}>
+              <HStack justify="space-between">
+                <Checkbox
+                  isChecked={todo.completed}
+                  onChange={() => handleToggleTodo(todo.id)}
+                >
+                  <Text
+                    textDecoration={todo.completed ? 'line-through' : 'none'}
+                  >
+                    {todo.text}
+                  </Text>
+                </Checkbox>
+                <IconButton
+                  aria-label="Delete todo"
+                  icon={<DeleteIcon />}
+                  size="sm"
+                  onClick={() => handleDeleteTodo(todo.id)}
+                />
+              </HStack>
+            </ListItem>
+          ))}
+        </List>
+      </VStack>
+    </Box>
+  );
+};
+
+export default TodoList;import React, { useState, useEffect } from 'react';
+import { Box, Text, VStack, Input, Button, Spinner, IconButton, useColorModeValue } from '@chakra-ui/react';
+import { SettingsIcon } from '@chakra-ui/icons';
+
+interface WeatherData {
+    temperature: number;
+    description: string;
+    humidity: number;
+    windSpeed: number;
+}
+
+const API_KEY = 'YOUR_OPENWEATHERMAP_API_KEY';
+
+const WeatherCard: React.FC = () => {
+    const [city, setCity] = useState('');
+    const [weather, setWeather] = useState<WeatherData | null>(null);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
+    const [showSettings, setShowSettings] = useState(false);
+
+    useEffect(() => {
+        const savedCity = localStorage.getItem('weatherCity');
+        if (savedCity) {
+            setCity(savedCity);
+            fetchWeather(savedCity);
+        }
+    }, []);
+
+    const fetchWeather = async (cityName: string) => {
+        if (!cityName) return;
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const response = await fetch(
+                `https://api.openweathermap.org/data/2.5/weather?q=${cityName}&appid=${API_KEY}&units=metric`
+            );
+
+            if (!response.ok) {
+                throw new Error('Risposta della rete non valida');
+            }
+
+            const data = await response.json();
+
+            setWeather({
+                temperature: data.main.temp,
+                description: data.weather[0].description,
+                humidity: data.main.humidity,
+                windSpeed: data.wind.speed
+            });
+            localStorage.setItem('weatherCity', cityName);
+        } catch (err) {
+            setError('Impossibile recuperare i dati meteo. Verifica il nome della città.');
+            setWeather(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        fetchWeather(city);
+        setShowSettings(false);
+    };
+    const bgColor = useColorModeValue('white', 'gray.700');
+    const borderColor = useColorModeValue('gray.200', 'gray.600');
+    return (
+        <Box borderWidth="1px" borderRadius="lg" p={4} width="300px" position="relative"   bg={bgColor}
+             borderColor={borderColor}>
+            <IconButton
+                aria-label="Impostazioni"
+                icon={<SettingsIcon />}
+                size="sm"
+                position="absolute"
+                top={2}
+                right={2}
+
+                onClick={() => setShowSettings(!showSettings)}
+            />
+            <VStack align="start" spacing={4}>
+                <Text fontSize="xl" fontWeight="bold">Meteo</Text>
+                {showSettings ? (
+                    <form onSubmit={handleSubmit}>
+                        <VStack>
+                            <Input
+                                placeholder="Inserisci una città"
+                                value={city}
+                                onChange={(e) => setCity(e.target.value)}
+                            />
+                            <Button type="submit" isLoading={loading}>
+                                Aggiorna meteo
+                            </Button>
+                        </VStack>
+                    </form>
+                ) : (
+                    <>
+                        {loading && <Spinner />}
+                        {error && <Text color="red.500">{error}</Text>}
+                        {weather && (
+                            <VStack align="start" spacing={2}>
+                                <Text>Città: {city}</Text>
+                                <Text>Temperatura: {weather.temperature}°C</Text>
+                                <Text>Condizioni: {weather.description}</Text>
+                                <Text>Umidità: {weather.humidity}%</Text>
+                                <Text>Velocità del vento: {weather.windSpeed} m/s</Text>
+                            </VStack>
+                        )}
+                    </>
+                )}
+            </VStack>
+        </Box>
+    );
+};
+
+export default WeatherCard;
