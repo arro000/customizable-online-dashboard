@@ -33,6 +33,7 @@ const WidgetManager: React.FC<WidgetManagerProps> = ({ onAddWidget }) => {
 
   const openModal = () => setIsOpen(true);
   const closeModal = () => setIsOpen(false);
+  
 
   const addWidget = () => {
     if (selectedWidget) {
@@ -40,7 +41,7 @@ const WidgetManager: React.FC<WidgetManagerProps> = ({ onAddWidget }) => {
         x: 0,
         y: 0,
         w: 2,
-        h: 4,
+        h: 10,
         component: selectedWidget,
       });
       closeModal();

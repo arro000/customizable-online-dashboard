@@ -1,6 +1,5 @@
-// components/GridLayout.tsx
-import React, { useState, useEffect } from "react";
-import InternalGridLayout, { Layout } from "react-grid-layout";
+import React from "react";
+import InternalGridLayout, { Layout, DropCallback } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { Box } from "@chakra-ui/react";
@@ -14,44 +13,62 @@ interface GridItem extends Layout {
 
 interface GridLayoutProps {
   widgets: GridItem[];
+  setWidgets: React.Dispatch<React.SetStateAction<GridItem[]>>;
   renderWidget: (item: GridItem) => React.ReactNode;
 }
 
 const GridLayout: React.FC<GridLayoutProps> = ({
   widgets,
+  setWidgets,
   renderWidget,
 }) => {
-  const initialLayout=widgets
-  const [layout, setLayout] = useState<GridItem[]>(initialLayout);
- useEffect(()=>{
-   
- },[])
   const onLayoutChange = (newLayout: Layout[]): void => {
-    setLayout(
-      newLayout.map((item, index) => ({
-        ...item,
-        ...layout[index],
+    setWidgets((prevWidgets) =>
+      prevWidgets.map((widget, index) => ({
+        ...widget,
+        ...newLayout[index],
       }))
     );
   };
-  console.log(layout);
+
+  const onDrop: DropCallback = (layout, item, e) => {
+    const newWidget: GridItem = {
+      ...item,
+      i: `n${Date.now()}`,
+      component: item.i,
+      isResizable: true,
+      isDraggable: true,
+    };
+
+    setWidgets((prevWidgets) => [...prevWidgets, newWidget]);
+  };
+
+  const onResizeStop = (layout: Layout[], oldItem: Layout, newItem: Layout) => {
+    setWidgets((prevWidgets) =>
+      prevWidgets.map((widget) =>
+        widget.i === newItem.i ? { ...widget, ...newItem } : widget
+      )
+    );
+  };
 
   return (
     <Box>
       <InternalGridLayout
         layout={widgets}
         onLayoutChange={onLayoutChange}
+        onResizeStop={onResizeStop}
+        onDrop={onDrop}
         rowHeight={10}
         cols={100}
         isResizable={true}
         isDraggable={true}
+        isDroppable={true}
       >
         {widgets.map((item) => (
           <Box key={item.i} bg="gray.200" p={4}>
             {renderWidget(item)}
           </Box>
         ))}
-      
       </InternalGridLayout>
     </Box>
   );

@@ -1,21 +1,15 @@
 import React, { useState, useEffect } from "react";
 import {
   ChakraProvider,
-  useColorMode,
-  Button,
-  useToast,
-  Spacer,
   Box,
   VStack,
   HStack,
-  Flex,
 } from "@chakra-ui/react";
-import ActionButtons from "../components/widgets/ActionButtons";
 import { Clock, DynamicBackground } from "../components/widgets";
-import MyGridLayout from "../components/layout/GridLayout";
 import WidgetManager from "../components/managers/WidgetManager";
 import * as Components from "../components/widgets/index";
 import GridLayout from "../components/layout/GridLayout";
+import { useLocalStorage } from "../lib/useLocalStorage";
 
 interface WidgetConfig {
   i: string;
@@ -28,13 +22,15 @@ interface WidgetConfig {
   component: keyof typeof Components;
   props?: Record<string, any>;
 }
+
 const App: React.FC = () => {
-  const [widgets, setWidgets] = useState<WidgetConfig[]>([]);
-const [counter, setcounter] = useState(0)
+  const [widgets, setWidgets, exportWidgets, importWidgets] = useLocalStorage<WidgetConfig[]>("widgets", [], "app");
+  const [counter, setCounter] = useState(0);
+
   const addWidget = (
     newWidget: Omit<WidgetConfig, "i" | "isResizable" | "isDraggable">
   ) => {
-    setcounter(counter+1)
+    setCounter(counter + 1);
     const widgetConfig: WidgetConfig = {
       ...newWidget,
       i: Date.now().toString(),
@@ -43,6 +39,7 @@ const [counter, setcounter] = useState(0)
     };
     setWidgets((prevWidgets) => [...prevWidgets, widgetConfig]);
   };
+
   return (
     <ChakraProvider>
       <DynamicBackground />
@@ -56,6 +53,7 @@ const [counter, setcounter] = useState(0)
         
           <GridLayout
             widgets={widgets}
+            setWidgets={setWidgets}
             renderWidget={(item) => {
               const WidgetComponent = (Components as any)[item.component];
               return <WidgetComponent {...item.props} />;
