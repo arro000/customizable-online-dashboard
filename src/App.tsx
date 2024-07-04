@@ -19,13 +19,14 @@ import DynamicDashboard from "./components/DynamicDashboard"
 import AdvancedDataVisualizer from "./components/AdvancedDataVisualizer"
 import {CardData} from "./components/Card";
 import { v4 as uuidv4 } from 'uuid';
-
+import { FaEdit, FaPlus, FaMinus, FaArrowsAlt, FaExpand, FaCompress, FaUndoAlt } from 'react-icons/fa';
 
 const App: React.FC = () => {
   const [cards, setCards] = useState<CardData[]>([]);
   const [isEditMode, setIsEditMode] = useState(false);
 const { colorMode, toggleColorMode } = useColorMode();
   const toast = useToast();
+  const [shouldResetPosition, setShouldResetPosition] = useState<boolean>(false);
   const toggleEditMode = () => setIsEditMode(!isEditMode);
   useEffect(() => {
     const savedCards = localStorage.getItem('cards');
@@ -166,6 +167,14 @@ useEffect(() => {
           <HStack justify="space-between">
             <Clock />
             <Flex gap={6} direction={"column"}>
+              <Button
+  leftIcon={<FaUndoAlt />}
+  onClick={() => setShouldResetPosition(true)}
+  mr={2}
+  mb={2}
+>
+  Reset Position
+</Button>
                 <Button onClick={toggleColorMode} size="sm">
                 Tema: {colorMode === "light" ? "Scuro" : "Chiaro"}
               </Button>

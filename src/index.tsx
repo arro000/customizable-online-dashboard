@@ -2,11 +2,11 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import { ChakraProvider } from '@chakra-ui/react';
 import App from './App';
-
+import GridLayout from "./components/GridLayout"
 ReactDOM.render(
   <React.StrictMode>
     <ChakraProvider>
-      <App />
+      <GridLayout />
     </ChakraProvider>
   </React.StrictMode>,
   document.getElementById('root')
