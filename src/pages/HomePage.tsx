@@ -30,10 +30,11 @@ interface WidgetConfig {
 }
 const App: React.FC = () => {
   const [widgets, setWidgets] = useState<WidgetConfig[]>([]);
-
+const [counter, setcounter] = useState(0)
   const addWidget = (
     newWidget: Omit<WidgetConfig, "i" | "isResizable" | "isDraggable">
   ) => {
+    setcounter(counter+1)
     const widgetConfig: WidgetConfig = {
       ...newWidget,
       i: Date.now().toString(),
@@ -50,9 +51,11 @@ const App: React.FC = () => {
           <HStack justify="space-between">
             <Clock />
           </HStack>
+        
           <WidgetManager onAddWidget={addWidget} />
+        
           <GridLayout
-            initialLayout={widgets}
+            widgets={widgets}
             renderWidget={(item) => {
               const WidgetComponent = (Components as any)[item.component];
               return <WidgetComponent {...item.props} />;

@@ -1,5 +1,5 @@
 // components/GridLayout.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import InternalGridLayout, { Layout } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
@@ -13,16 +13,19 @@ interface GridItem extends Layout {
 }
 
 interface GridLayoutProps {
-  initialLayout: GridItem[];
+  widgets: GridItem[];
   renderWidget: (item: GridItem) => React.ReactNode;
 }
 
 const GridLayout: React.FC<GridLayoutProps> = ({
-  initialLayout,
+  widgets,
   renderWidget,
 }) => {
+  const initialLayout=widgets
   const [layout, setLayout] = useState<GridItem[]>(initialLayout);
-
+ useEffect(()=>{
+   
+ },[])
   const onLayoutChange = (newLayout: Layout[]): void => {
     setLayout(
       newLayout.map((item, index) => ({
@@ -36,18 +39,19 @@ const GridLayout: React.FC<GridLayoutProps> = ({
   return (
     <Box>
       <InternalGridLayout
-        layout={layout}
+        layout={widgets}
         onLayoutChange={onLayoutChange}
         rowHeight={10}
         cols={100}
         isResizable={true}
         isDraggable={true}
       >
-        {layout.map((item) => (
+        {widgets.map((item) => (
           <Box key={item.i} bg="gray.200" p={4}>
             {renderWidget(item)}
           </Box>
         ))}
+      
       </InternalGridLayout>
     </Box>
   );
