@@ -10,6 +10,7 @@ import {
   useColorModeValue,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
+import WidgetBase from "../WidgetBase";
 
 const animals = [
   "cat",
@@ -72,14 +73,7 @@ const RandomAnimalsXtreme = () => {
   const bgColor = useColorModeValue("white", "gray.700");
   const borderColor = useColorModeValue("gray.200", "gray.600");
   return (
-    <Box
-      p={5}
-      borderWidth={2}
-      borderRadius="lg"
-      boxShadow="lg"
-      bgColor={bgColor}
-      borderColor={borderColor}
-    >
+    <WidgetBase>
       <VStack spacing={4}>
         <Text fontSize="2xl" fontWeight="bold" color="purple.500">
           Random Animals Xtreme!
@@ -151,7 +145,7 @@ const RandomAnimalsXtreme = () => {
           </Box>
         </HStack>
       </VStack>
-    </Box>
+    </WidgetBase>
   );
 };
 

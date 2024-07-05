@@ -16,6 +16,7 @@ import {
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
 import { FaCheckCircle, FaHourglassHalf, FaBrain } from "react-icons/fa";
+import WidgetBase from "../WidgetBase";
 interface Task {
   id: number;
   text: string;
@@ -105,14 +106,7 @@ const SmartTaskManager = () => {
   };
 
   return (
-    <Box
-      p={5}
-      borderWidth={1}
-      borderRadius="lg"
-      boxShadow="md"
-      bg={bgColor}
-      borderColor={borderColor}
-    >
+    <WidgetBase>
       <VStack spacing={4} align="stretch">
         <Text fontSize="2xl" fontWeight="bold" color="blue.500">
           Smart Task Manager
@@ -197,7 +191,7 @@ const SmartTaskManager = () => {
           </Box>
         )}
       </VStack>
-    </Box>
+    </WidgetBase>
   );
 };
 

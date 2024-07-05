@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Button,
@@ -10,7 +10,8 @@ import {
   SliderFilledTrack,
   SliderThumb,
   useColorModeValue,
-} from '@chakra-ui/react';
+} from "@chakra-ui/react";
+import WidgetBase from "../WidgetBase";
 
 interface Neuron {
   x: number;
@@ -26,8 +27,8 @@ const useResizeObserver = (ref: React.RefObject<HTMLElement>) => {
     const observeTarget = ref.current;
     if (!observeTarget) return;
 
-    const resizeObserver = new ResizeObserver(entries => {
-      entries.forEach(entry => {
+    const resizeObserver = new ResizeObserver((entries) => {
+      entries.forEach((entry) => {
         setDimensions({
           width: entry.contentRect.width,
           height: entry.contentRect.height,
@@ -51,12 +52,12 @@ const NeuroNetVisualizer: React.FC = () => {
   const [neurons, setNeurons] = useState<Neuron[]>([]);
   const [learningRate, setLearningRate] = useState(0.1);
   const [iterations, setIterations] = useState(0);
-  
+
   const { width, height } = useResizeObserver(containerRef);
 
-  const bgColor = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const textColor = useColorModeValue('gray.800', 'white');
+  const bgColor = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
+  const textColor = useColorModeValue("gray.800", "white");
 
   const initializeNeurons = useCallback(() => {
     const newNeurons: Neuron[] = [];
@@ -97,14 +98,14 @@ const NeuroNetVisualizer: React.FC = () => {
     canvas.width = width;
     canvas.height = height;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw connections
     neurons.forEach((neuron, i) => {
-      neuron.connections.forEach(target => {
+      neuron.connections.forEach((target) => {
         ctx.beginPath();
         ctx.moveTo(neuron.x, neuron.y);
         ctx.lineTo(neurons[target].x, neurons[target].y);
@@ -115,7 +116,7 @@ const NeuroNetVisualizer: React.FC = () => {
     });
 
     // Draw neurons
-    neurons.forEach(neuron => {
+    neurons.forEach((neuron) => {
       ctx.beginPath();
       ctx.arc(neuron.x, neuron.y, 10, 0, 2 * Math.PI);
       ctx.fillStyle = `rgb(${neuron.activation * 255}, 100, 100)`;
@@ -124,8 +125,8 @@ const NeuroNetVisualizer: React.FC = () => {
   };
 
   const updateNetwork = () => {
-    setNeurons(prevNeurons => {
-      return prevNeurons.map(neuron => {
+    setNeurons((prevNeurons) => {
+      return prevNeurons.map((neuron) => {
         const inputSum = neuron.connections.reduce((sum, target) => {
           return sum + prevNeurons[target].activation;
         }, 0);
@@ -133,7 +134,7 @@ const NeuroNetVisualizer: React.FC = () => {
         return { ...neuron, activation: newActivation };
       });
     });
-    setIterations(prev => prev + 1);
+    setIterations((prev) => prev + 1);
   };
 
   const handleClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
@@ -144,8 +145,8 @@ const NeuroNetVisualizer: React.FC = () => {
     const x = event.clientX - rect.left;
     const y = event.clientY - rect.top;
 
-    setNeurons(prevNeurons => {
-      return prevNeurons.map(neuron => {
+    setNeurons((prevNeurons) => {
+      return prevNeurons.map((neuron) => {
         const distance = Math.sqrt((neuron.x - x) ** 2 + (neuron.y - y) ** 2);
         if (distance < 50) {
           return { ...neuron, activation: 1 };
@@ -156,18 +157,11 @@ const NeuroNetVisualizer: React.FC = () => {
   };
 
   return (
-    <Box
-      ref={containerRef}
-      borderWidth="1px"
-      borderRadius="lg"
-      p={4}
-      width="100%"
-      height="600px"
-      bg={bgColor}
-      borderColor={borderColor}
-    >
+    <WidgetBase>
       <VStack spacing={4} align="stretch" height="100%">
-        <Text fontSize="xl" fontWeight="bold" color={textColor}>NeuroNet Visualizer</Text>
+        <Text fontSize="xl" fontWeight="bold" color={textColor}>
+          NeuroNet Visualizer
+        </Text>
         <Box flexGrow={1} position="relative">
           <Box
             as="canvas"
@@ -183,8 +177,12 @@ const NeuroNetVisualizer: React.FC = () => {
           />
         </Box>
         <HStack>
-          <Button onClick={updateNetwork} colorScheme="blue">Update Network</Button>
-          <Button onClick={initializeNeurons} colorScheme="green">Reset</Button>
+          <Button onClick={updateNetwork} colorScheme="blue">
+            Update Network
+          </Button>
+          <Button onClick={initializeNeurons} colorScheme="green">
+            Reset
+          </Button>
         </HStack>
         <HStack>
           <Text color={textColor}>Learning Rate:</Text>
@@ -204,7 +202,7 @@ const NeuroNetVisualizer: React.FC = () => {
         </HStack>
         <Text color={textColor}>Iterations: {iterations}</Text>
       </VStack>
-    </Box>
+    </WidgetBase>
   );
 };
 

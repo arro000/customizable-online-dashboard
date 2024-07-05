@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Text,
@@ -13,27 +13,28 @@ import {
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
-} from '@chakra-ui/react';
+} from "@chakra-ui/react";
+import WidgetBase from "../WidgetBase";
 
 const PomodoroTimer: React.FC = () => {
   const [workTime, setWorkTime] = useState(() => {
-    const saved = localStorage.getItem('pomodoroWorkTime');
+    const saved = localStorage.getItem("pomodoroWorkTime");
     return saved ? parseInt(saved) : 25;
   });
   const [breakTime, setBreakTime] = useState(() => {
-    const saved = localStorage.getItem('pomodoroBreakTime');
+    const saved = localStorage.getItem("pomodoroBreakTime");
     return saved ? parseInt(saved) : 5;
   });
   const [time, setTime] = useState(workTime * 60);
   const [isActive, setIsActive] = useState(false);
   const [isWork, setIsWork] = useState(true);
 
-  const bgColor = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const bgColor = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
 
   useEffect(() => {
-    localStorage.setItem('pomodoroWorkTime', workTime.toString());
-    localStorage.setItem('pomodoroBreakTime', breakTime.toString());
+    localStorage.setItem("pomodoroWorkTime", workTime.toString());
+    localStorage.setItem("pomodoroBreakTime", breakTime.toString());
   }, [workTime, breakTime]);
 
   useEffect(() => {
@@ -71,7 +72,7 @@ const PomodoroTimer: React.FC = () => {
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+    return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
   const progress = isWork
@@ -93,14 +94,7 @@ const PomodoroTimer: React.FC = () => {
   };
 
   return (
-    <Box
-      borderWidth="1px"
-      borderRadius="lg"
-      p={4}
-      width={{ base: '100%', md: '300px' }}
-      bg={bgColor}
-      borderColor={borderColor}
-    >
+    <WidgetBase>
       <VStack spacing={4} align="stretch">
         <Text fontSize="xl" fontWeight="bold">
           Pomodoro Timer
@@ -108,9 +102,9 @@ const PomodoroTimer: React.FC = () => {
         <CircularProgress value={progress} size="120px" thickness="4px">
           <CircularProgressLabel>{formatTime(time)}</CircularProgressLabel>
         </CircularProgress>
-        <Text textAlign="center">{isWork ? 'Work' : 'Break'}</Text>
+        <Text textAlign="center">{isWork ? "Work" : "Break"}</Text>
         <HStack justify="center">
-          <Button onClick={toggleTimer}>{isActive ? 'Pause' : 'Start'}</Button>
+          <Button onClick={toggleTimer}>{isActive ? "Pause" : "Start"}</Button>
           <Button onClick={resetTimer}>Reset</Button>
         </HStack>
         <HStack justify="space-between">
@@ -146,7 +140,7 @@ const PomodoroTimer: React.FC = () => {
           </NumberInput>
         </HStack>
       </VStack>
-    </Box>
+    </WidgetBase>
   );
 };
 

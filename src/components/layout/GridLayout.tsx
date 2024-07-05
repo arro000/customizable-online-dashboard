@@ -23,6 +23,8 @@ const GridLayout: React.FC<GridLayoutProps> = ({
   renderWidget,
 }) => {
   const onLayoutChange = (newLayout: Layout[]): void => {
+    console.log(newLayout);
+
     setWidgets((prevWidgets) =>
       prevWidgets.map((widget, index) => ({
         ...widget,
@@ -31,16 +33,8 @@ const GridLayout: React.FC<GridLayoutProps> = ({
     );
   };
 
-  const onDrop: DropCallback = (layout, item, e) => {
-    const newWidget: GridItem = {
-      ...item,
-      i: `n${Date.now()}`,
-      component: item.i,
-      isResizable: true,
-      isDraggable: true,
-    };
-
-    setWidgets((prevWidgets) => [...prevWidgets, newWidget]);
+  const onDragStop: DropCallback = (layout, item, e) => {
+    console.log(layout, item, e);
   };
 
   const onResizeStop = (layout: Layout[], oldItem: Layout, newItem: Layout) => {
@@ -50,24 +44,26 @@ const GridLayout: React.FC<GridLayoutProps> = ({
       )
     );
   };
-
+  const width = window.innerWidth;
   return (
     <Box>
       <InternalGridLayout
         layout={widgets}
         onLayoutChange={onLayoutChange}
         onResizeStop={onResizeStop}
-        onDrop={onDrop}
+        onDragStop={onDragStop}
         rowHeight={10}
+        width={width}
         cols={100}
+        compactType={null}
         isResizable={true}
         isDraggable={true}
+        // This turns off rearrangement so items will not be pushed arround.
+        preventCollision={true}
         isDroppable={true}
       >
         {widgets.map((item) => (
-          <Box key={item.i} bg="gray.200" p={4}>
-            {renderWidget(item)}
-          </Box>
+          <Box key={item.i}>{renderWidget(item)}</Box>
         ))}
       </InternalGridLayout>
     </Box>

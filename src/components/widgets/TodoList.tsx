@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Box,
   VStack,
@@ -11,8 +11,9 @@ import {
   IconButton,
   Checkbox,
   useColorModeValue,
-} from '@chakra-ui/react';
-import { DeleteIcon } from '@chakra-ui/icons';
+} from "@chakra-ui/react";
+import { DeleteIcon } from "@chakra-ui/icons";
+import WidgetBase from "../WidgetBase";
 
 interface Todo {
   id: number;
@@ -22,17 +23,17 @@ interface Todo {
 
 const TodoList: React.FC = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputValue, setInputValue] = useState("");
 
   useEffect(() => {
-    const savedTodos = localStorage.getItem('todos');
+    const savedTodos = localStorage.getItem("todos");
     if (savedTodos) {
       setTodos(JSON.parse(savedTodos));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('todos', JSON.stringify(todos));
+    localStorage.setItem("todos", JSON.stringify(todos));
   }, [todos]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -40,14 +41,14 @@ const TodoList: React.FC = () => {
   };
 
   const handleAddTodo = () => {
-    if (inputValue.trim() !== '') {
+    if (inputValue.trim() !== "") {
       const newTodo: Todo = {
         id: Date.now(),
         text: inputValue.trim(),
         completed: false,
       };
       setTodos([...todos, newTodo]);
-      setInputValue('');
+      setInputValue("");
     }
   };
 
@@ -63,18 +64,11 @@ const TodoList: React.FC = () => {
     );
   };
 
-  const bgColor = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const bgColor = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
 
   return (
-    <Box
-      borderWidth="1px"
-      borderRadius="lg"
-      p={4}
-      width={{ base: '100%', md: '300px' }}
-      bg={bgColor}
-      borderColor={borderColor}
-    >
+    <WidgetBase>
       <VStack spacing={4} align="stretch">
         <Text fontSize="xl" fontWeight="bold">
           Todo List
@@ -96,7 +90,7 @@ const TodoList: React.FC = () => {
                   onChange={() => handleToggleTodo(todo.id)}
                 >
                   <Text
-                    textDecoration={todo.completed ? 'line-through' : 'none'}
+                    textDecoration={todo.completed ? "line-through" : "none"}
                   >
                     {todo.text}
                   </Text>
@@ -112,7 +106,7 @@ const TodoList: React.FC = () => {
           ))}
         </List>
       </VStack>
-    </Box>
+    </WidgetBase>
   );
 };
 

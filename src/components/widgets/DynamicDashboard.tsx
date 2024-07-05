@@ -1,9 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Box, Button, VStack, HStack, Text, Select, Input, useToast } from '@chakra-ui/react';
-import { motion, Reorder } from 'framer-motion';
-import { v4 as uuidv4 } from 'uuid';
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Button,
+  VStack,
+  HStack,
+  Text,
+  Select,
+  Input,
+  useToast,
+} from "@chakra-ui/react";
+import { motion, Reorder } from "framer-motion";
+import { v4 as uuidv4 } from "uuid";
+import WidgetBase from "../WidgetBase";
 
-type WidgetType = 'text' | 'number' | 'chart';
+type WidgetType = "text" | "number" | "chart";
 
 interface Widget {
   id: string;
@@ -12,7 +22,10 @@ interface Widget {
   content: string;
 }
 
-const WidgetComponent: React.FC<{ widget: Widget; onEdit: (id: string, content: string) => void }> = ({ widget, onEdit }) => {
+const WidgetComponent: React.FC<{
+  widget: Widget;
+  onEdit: (id: string, content: string) => void;
+}> = ({ widget, onEdit }) => {
   const [editing, setEditing] = useState(false);
   const [editContent, setEditContent] = useState(widget.content);
 
@@ -22,48 +35,63 @@ const WidgetComponent: React.FC<{ widget: Widget; onEdit: (id: string, content: 
   };
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 50 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -50 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-    >
-      <Box borderWidth="1px" borderRadius="lg" p={4} mb={4} bg="white">
-        <Text fontWeight="bold" mb={2}>{widget.title}</Text>
+    <WidgetBase>
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -50 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      >
+        <Text fontWeight="bold" mb={2}>
+          {widget.title}
+        </Text>
         {editing ? (
           <VStack>
-            <Input value={editContent} onChange={(e) => setEditContent(e.target.value)} />
+            <Input
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+            />
             <Button onClick={handleSave}>Salva</Button>
           </VStack>
         ) : (
           <VStack align="start">
-            {widget.type === 'text' && <Text>{widget.content}</Text>}
-            {widget.type === 'number' && <Text fontSize="2xl" fontWeight="bold">{widget.content}</Text>}
-            {widget.type === 'chart' && <Text>Qui verrebbe visualizzato un grafico basato su: {widget.content}</Text>}
-            <Button size="sm" onClick={() => setEditing(true)}>Modifica</Button>
+            {widget.type === "text" && <Text>{widget.content}</Text>}
+            {widget.type === "number" && (
+              <Text fontSize="2xl" fontWeight="bold">
+                {widget.content}
+              </Text>
+            )}
+            {widget.type === "chart" && (
+              <Text>
+                Qui verrebbe visualizzato un grafico basato su: {widget.content}
+              </Text>
+            )}
+            <Button size="sm" onClick={() => setEditing(true)}>
+              Modifica
+            </Button>
           </VStack>
         )}
-      </Box>
-    </motion.div>
+      </motion.div>
+    </WidgetBase>
   );
 };
 
 const DynamicDashboard: React.FC = () => {
   const [widgets, setWidgets] = useState<Widget[]>([]);
-  const [newWidgetType, setNewWidgetType] = useState<WidgetType>('text');
-  const [newWidgetTitle, setNewWidgetTitle] = useState('');
+  const [newWidgetType, setNewWidgetType] = useState<WidgetType>("text");
+  const [newWidgetTitle, setNewWidgetTitle] = useState("");
   const toast = useToast();
 
   useEffect(() => {
-    const savedWidgets = localStorage.getItem('dashboardWidgets');
+    const savedWidgets = localStorage.getItem("dashboardWidgets");
     if (savedWidgets) {
       setWidgets(JSON.parse(savedWidgets));
     }
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('dashboardWidgets', JSON.stringify(widgets));
+    localStorage.setItem("dashboardWidgets", JSON.stringify(widgets));
   }, [widgets]);
 
   const addWidget = () => {
@@ -81,31 +109,34 @@ const DynamicDashboard: React.FC = () => {
       id: uuidv4(),
       type: newWidgetType,
       title: newWidgetTitle,
-      content: '',
+      content: "",
     };
     setWidgets([...widgets, newWidget]);
-    setNewWidgetTitle('');
+    setNewWidgetTitle("");
   };
 
   const editWidget = (id: string, content: string) => {
-    setWidgets(widgets.map(w => w.id === id ? { ...w, content } : w));
+    setWidgets(widgets.map((w) => (w.id === id ? { ...w, content } : w)));
   };
 
   const removeWidget = (id: string) => {
-    setWidgets(widgets.filter(w => w.id !== id));
+    setWidgets(widgets.filter((w) => w.id !== id));
   };
 
   return (
     <VStack spacing={4} align="stretch">
       <HStack>
-        <Select value={newWidgetType} onChange={(e) => setNewWidgetType(e.target.value as WidgetType)}>
+        <Select
+          value={newWidgetType}
+          onChange={(e) => setNewWidgetType(e.target.value as WidgetType)}
+        >
           <option value="text">Testo</option>
           <option value="number">Numero</option>
           <option value="chart">Grafico</option>
         </Select>
-        <Input 
-          placeholder="Titolo del widget" 
-          value={newWidgetTitle} 
+        <Input
+          placeholder="Titolo del widget"
+          value={newWidgetTitle}
           onChange={(e) => setNewWidgetTitle(e.target.value)}
         />
         <Button onClick={addWidget}>Aggiungi Widget</Button>
@@ -121,7 +152,9 @@ const DynamicDashboard: React.FC = () => {
             >
               <HStack justify="space-between" mb={2}>
                 <Text fontWeight="bold">{widget.title}</Text>
-                <Button size="sm" onClick={() => removeWidget(widget.id)}>Rimuovi</Button>
+                <Button size="sm" onClick={() => removeWidget(widget.id)}>
+                  Rimuovi
+                </Button>
               </HStack>
               <WidgetComponent widget={widget} onEdit={editWidget} />
             </motion.div>

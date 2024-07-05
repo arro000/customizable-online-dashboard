@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Text,
@@ -6,28 +6,29 @@ import {
   Select,
   useColorModeValue,
   Button,
-} from '@chakra-ui/react';
+} from "@chakra-ui/react";
+import WidgetBase from "../WidgetBase";
 
 interface MoodColor {
   [key: string]: string;
 }
 
 const moodColors: MoodColor = {
-  happy: 'yellow.200',
-  sad: 'blue.200',
-  excited: 'orange.200',
-  calm: 'green.200',
-  angry: 'red.200',
-  confused: 'purple.200',
-  tired: 'gray.200',
-  inspired: 'cyan.200',
-  anxious: 'teal.200',
-  mischievous: 'pink.200',
-  confident: 'gold.200',
-  curious: 'lime.200',
+  happy: "yellow.200",
+  sad: "blue.200",
+  excited: "orange.200",
+  calm: "green.200",
+  angry: "red.200",
+  confused: "purple.200",
+  tired: "gray.200",
+  inspired: "cyan.200",
+  anxious: "teal.200",
+  mischievous: "pink.200",
+  confident: "gold.200",
+  curious: "lime.200",
 };
 
-const moodPhrases: {[key:string]:string[]} = {
+const moodPhrases: { [key: string]: string[] } = {
   happy: [
     "You're shining brighter than a disco ball!",
     "Your smile could power a small city!",
@@ -115,10 +116,10 @@ const moodPhrases: {[key:string]:string[]} = {
 };
 
 const MoodColorizer: React.FC = () => {
-  const [mood, setMood] = useState<string>('happy');
+  const [mood, setMood] = useState<string>("happy");
   const [phrase, setPhrase] = useState<string>(moodPhrases.happy[0]);
-  const bgColor = useColorModeValue('white', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const bgColor = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
 
   const handleMoodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newMood = event.target.value;
@@ -133,41 +134,34 @@ const MoodColorizer: React.FC = () => {
   };
 
   return (
-  <Box
-    borderWidth="1px"
-    borderRadius="lg"
-    p={4}
-    width={{ base: '100%', md: '300px' }}
-    bg={bgColor}
-    borderColor={borderColor}
-  >
-    <VStack spacing={4} align="stretch">
-      <Text fontSize="xl" fontWeight="bold">
-        Mood Colorizer
-      </Text>
-      <Select value={mood} onChange={handleMoodChange}>
-        {Object.keys(moodColors).map((moodOption) => (
-          <option key={moodOption} value={moodOption}>
-            {moodOption.charAt(0).toUpperCase() + moodOption.slice(1)}
-          </option>
-        ))}
-      </Select>
-      <Box
-        bg={moodColors[mood]}
-        p={4}
-        borderRadius="md"
-        minHeight="100px"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Text textAlign="center" fontWeight="bold">
-          {phrase}
+    <WidgetBase>
+      <VStack spacing={4} align="stretch">
+        <Text fontSize="xl" fontWeight="bold">
+          Mood Colorizer
         </Text>
-      </Box>
-      <Button onClick={generateNewPhrase}>New Phrase</Button>
-    </VStack>
-  </Box>
-);
-}
+        <Select value={mood} onChange={handleMoodChange}>
+          {Object.keys(moodColors).map((moodOption) => (
+            <option key={moodOption} value={moodOption}>
+              {moodOption.charAt(0).toUpperCase() + moodOption.slice(1)}
+            </option>
+          ))}
+        </Select>
+        <Box
+          bg={moodColors[mood]}
+          p={4}
+          borderRadius="md"
+          minHeight="100px"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Text textAlign="center" fontWeight="bold">
+            {phrase}
+          </Text>
+        </Box>
+        <Button onClick={generateNewPhrase}>New Phrase</Button>
+      </VStack>
+    </WidgetBase>
+  );
+};
 export default MoodColorizer;

@@ -38,6 +38,7 @@ import { motion } from "framer-motion";
 import { FaPlus, FaChartLine, FaPiggyBank } from "react-icons/fa";
 import { FaFileImport, FaFileExport } from "react-icons/fa";
 import { parse } from "papaparse";
+import WidgetBase from "../WidgetBase";
 interface Transaction {
   id: number;
   type: string;
@@ -207,16 +208,7 @@ const SmartFinanceManager = () => {
   };
 
   return (
-    <Box
-      p={5}
-      borderWidth={1}
-      borderRadius="lg"
-      boxShadow="lg"
-      bg={bgColor}
-      borderColor={borderColor}
-      maxWidth="800px"
-      margin="auto"
-    >
+    <WidgetBase>
       <VStack spacing={6} align="stretch">
         <Text
           fontSize="3xl"
@@ -442,7 +434,7 @@ const SmartFinanceManager = () => {
           </ModalContent>
         </Modal>
       </VStack>
-    </Box>
+    </WidgetBase>
   );
 };
 
