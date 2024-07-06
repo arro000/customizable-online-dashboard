@@ -13,9 +13,11 @@ import {
   Box,
 } from "@chakra-ui/react";
 import * as Components from "../widgets/index";
+import { v4 as uuidv4 } from "uuid";
 
 interface WidgetManagerProps {
   onAddWidget: (widget: {
+    id: string;
     x: number;
     y: number;
     w: number;
@@ -37,6 +39,7 @@ const WidgetManager: React.FC<WidgetManagerProps> = ({ onAddWidget }) => {
   const addWidget = () => {
     if (selectedWidget) {
       onAddWidget({
+        id: uuidv4(),
         x: 0,
         y: 0,
         w: 15,

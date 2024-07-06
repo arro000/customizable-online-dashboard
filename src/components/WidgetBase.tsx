@@ -1,6 +1,9 @@
 import { Box, useColorModeValue } from "@chakra-ui/react";
+import { ReactNode, createContext } from "react";
 
 interface WidgetProps {
+  editMode: boolean;
+  settings?: React.ReactNode;
   children: React.ReactNode;
 }
 
@@ -11,14 +14,15 @@ const WidgetBase = (props: WidgetProps) => {
     <Box
       borderWidth="1px"
       borderRadius="lg"
-      p={4}
+      overflow="scroll"
       width="100%"
       height="100%"
       position="relative"
+      zIndex={1}
       bg={bgColor}
       borderColor={borderColor}
     >
-      {props.children}
+      {props.editMode && props.settings ? props.settings : props.children}
     </Box>
   );
 };

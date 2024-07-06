@@ -13,7 +13,7 @@ import {
 import ActionButtons from "./components/widgets/ActionButtons";
 import CardList from "./components/widgets/CardList";
 import Clock from "./components/widgets/Clock";
-import DynamicBackground from "./components/widgets/DynamicBackground";
+import DynamicBackground from "./components/widgets/backgrounds/DynamicBackground";
 import NewsCard from "./components/widgets/NewsCard";
 import WeatherCard from "./components/widgets/WeatherCard";
 import TodoList from "./components/widgets/TodoList";

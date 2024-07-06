@@ -1,52 +1,79 @@
 import React, { useState, useEffect } from "react";
-import { ChakraProvider, Box, VStack, HStack, Flex } from "@chakra-ui/react";
+import {
+  ChakraProvider,
+  Box,
+  VStack,
+  HStack,
+  Flex,
+  Button,
+} from "@chakra-ui/react";
 import { Clock, DynamicBackground } from "../components/widgets";
 import WidgetManager from "../components/managers/WidgetManager";
 import * as Components from "../components/widgets/index";
 import GridLayout from "../components/layout/GridLayout";
 import { useLocalStorage } from "../lib/useLocalStorage";
 import ColorModeButton from "../components/buttons/ColorModeButton";
-
-interface WidgetConfig {
-  i: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
-  isResizable: boolean;
-  isDraggable: boolean;
-  resizeHandles: string[];
-  component: keyof typeof Components;
-  props?: Record<string, any>;
-}
+import { EditModeToggleButton } from "../components/buttons/EditModeToggleButton";
+import { FaTimesCircle } from "react-icons/fa";
+import { WidgetConfig } from "../interfaces/widget";
+import BackgroundSelector from "../components/managers/BackgroundSelector";
 
 const App: React.FC = () => {
-  const [widgets, setWidgets, exportWidgets, importWidgets] = useLocalStorage<
-    WidgetConfig[]
-  >("widgets", [], "app");
-  const [counter, setCounter] = useState(0);
+  const [widgets, setWidgets, exportWidgets, importWidgets] = useLocalStorage(
+    "widgets",
+    [],
+    "app"
+  );
+  const [editMode, setEditMode] = useState(false);
 
   const addWidget = (
     newWidget: Omit<WidgetConfig, "i" | "isResizable" | "isDraggable">
   ) => {
-    setCounter(counter + 1);
     const widgetConfig: WidgetConfig = {
       ...newWidget,
       i: Date.now().toString(),
-      isResizable: true,
-      isDraggable: true,
-      resizeHandles: ["s", "w", "e", "n", "sw", "nw", "se", "ne"],
     };
-    setWidgets((prevWidgets) => [...prevWidgets, widgetConfig]);
+    setWidgets((prevWidgets: WidgetConfig[]) => [...prevWidgets, widgetConfig]);
+  };
+  const resetWidgetState = () => setWidgets([]);
+  const cleanLocalStorage = (widgetId: string) => {
+    console.log(Object.keys(localStorage));
+    const keysToRemove = Object.keys(localStorage).filter((key) =>
+      key.includes(`_${widgetId}_`)
+    );
+    keysToRemove.forEach((key) => localStorage.removeItem(key));
+  };
+
+  const handleDeleteWidget = (widgetId: string) => {
+    console.log(widgetId);
+    setWidgets((prevWidgets: WidgetConfig[]) => {
+      return prevWidgets.filter((widget) => widget.id !== widgetId);
+    });
+    cleanLocalStorage(widgetId);
   };
 
   return (
     <ChakraProvider>
-      <DynamicBackground />
       <Box p={4}>
         <Flex direction="row" justifyContent="flex-end" gap={5}>
-          <ColorModeButton />
-          <WidgetManager onAddWidget={addWidget} />
+          <BackgroundSelector editMode={editMode} />
+
+          {editMode && (
+            <>
+              <ColorModeButton />
+              <WidgetManager onAddWidget={addWidget} />
+              <Button
+                onClick={resetWidgetState}
+                rightIcon={<FaTimesCircle> </FaTimesCircle>}
+              >
+                Reset Widgets
+              </Button>
+            </>
+          )}
+          <EditModeToggleButton
+            editMode={editMode}
+            setEditMode={setEditMode}
+          ></EditModeToggleButton>
         </Flex>
         <VStack spacing={4} align="stretch">
           <Flex justifyContent="center">
@@ -54,11 +81,17 @@ const App: React.FC = () => {
           </Flex>
 
           <GridLayout
+            editMode={editMode}
             widgets={widgets}
             setWidgets={setWidgets}
-            renderWidget={(item) => {
+            onDeleteWidget={handleDeleteWidget}
+            renderWidget={(item: WidgetConfig) => {
               const WidgetComponent = (Components as any)[item.component];
-              return <WidgetComponent {...item.props} />;
+              return (
+                <WidgetComponent
+                  {...{ ...item.props, editMode, id: item.id }}
+                />
+              );
             }}
           />
         </VStack>
