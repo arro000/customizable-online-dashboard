@@ -1,14 +1,6 @@
-import React, { useState, useEffect } from "react";
-import {
-  ChakraProvider,
-  Box,
-  VStack,
-  HStack,
-  Flex,
-  Button,
-} from "@chakra-ui/react";
-import { Clock, DynamicBackground } from "../components/widgets";
-import  WidgetBase from "../components/WidgetBase.tsx";
+import React, { useState } from "react";
+import { ChakraProvider, Box, VStack, Flex, Button } from "@chakra-ui/react";
+
 import WidgetManager from "../components/managers/WidgetManager";
 import * as Components from "../components/widgets/index";
 import GridLayout from "../components/layout/GridLayout";
@@ -27,18 +19,17 @@ const App: React.FC = () => {
   );
   const [editMode, setEditMode] = useState(false);
 
-  const addWidget = (
-    newWidget: Omit<WidgetConfig, "i" | "isResizable" | "isDraggable">
-  ) => {
+  const addWidget = (newWidget: WidgetConfig) => {
+    console.log(newWidget);
     const widgetConfig: WidgetConfig = {
       ...newWidget,
-      i: Date.now().toString(),
     };
     setWidgets((prevWidgets: WidgetConfig[]) => [...prevWidgets, widgetConfig]);
   };
+
   const resetWidgetState = () => setWidgets([]);
+
   const cleanLocalStorage = (widgetId: string) => {
-    console.log(Object.keys(localStorage));
     const keysToRemove = Object.keys(localStorage).filter((key) =>
       key.includes(`_${widgetId}_`)
     );
@@ -46,10 +37,9 @@ const App: React.FC = () => {
   };
 
   const handleDeleteWidget = (widgetId: string) => {
-    console.log(widgetId);
-    setWidgets((prevWidgets: WidgetConfig[]) => {
-      return prevWidgets.filter((widget) => widget.id !== widgetId);
-    });
+    setWidgets((prevWidgets: WidgetConfig[]) =>
+      prevWidgets.filter((widget) => widget.id !== widgetId)
+    );
     cleanLocalStorage(widgetId);
   };
 
@@ -63,24 +53,14 @@ const App: React.FC = () => {
             <>
               <ColorModeButton />
               <WidgetManager onAddWidget={addWidget} />
-              <Button
-                onClick={resetWidgetState}
-                rightIcon={<FaTimesCircle> </FaTimesCircle>}
-              >
+              <Button onClick={resetWidgetState} rightIcon={<FaTimesCircle />}>
                 Reset Widgets
               </Button>
             </>
           )}
-          <EditModeToggleButton
-            editMode={editMode}
-            setEditMode={setEditMode}
-          ></EditModeToggleButton>
+          <EditModeToggleButton editMode={editMode} setEditMode={setEditMode} />
         </Flex>
         <VStack align="stretch">
-          <Flex justifyContent="center">
-            <Clock />
-          </Flex>
-
           <GridLayout
             editMode={editMode}
             widgets={widgets}
@@ -88,14 +68,17 @@ const App: React.FC = () => {
             onDeleteWidget={handleDeleteWidget}
             renderWidget={(item: WidgetConfig) => {
               const WidgetComponent = (Components as any)[item.component];
-              const WidgetComponentOptions = WidgetComponent.Options
-              const WidgetComponentConfigs=WidgetComponent.Configs
+              if (!WidgetComponent) {
+                console.error(`Widget component ${item.component} not found`);
+                return null;
+              }
               return (
-               <WidgetBase editMode={editMode} settings={WidgetComponentOptions}>
                 <WidgetComponent
-                  {...{ ...item.props, editMode, id: item.id }}
+                  key={item.id}
+                  id={item.id}
+                  editMode={editMode}
+                  {...item.props}
                 />
-                </WidgetBase>
               );
             }}
           />

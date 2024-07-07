@@ -3,7 +3,6 @@ export { default as AdvancedDataVisualizer } from "./AdvancedDataVisualizer";
 export { default as Calculator } from "./Calculator";
 export { default as Clock } from "./Clock";
 export { default as ConfigurableIframeCard } from "./ConfigurableIframeCard";
-export { default as DynamicDashboard } from "./DynamicDashboard";
 export { default as InteractiveMindMap } from "./InteractiveMindMap";
 export { default as MoodColorizer } from "./MoodColorizer";
 export { default as MoodMusicMixer } from "./MoodMusicMixer";

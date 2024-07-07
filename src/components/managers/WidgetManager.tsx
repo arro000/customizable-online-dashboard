@@ -14,17 +14,10 @@ import {
 } from "@chakra-ui/react";
 import * as Components from "../widgets/index";
 import { v4 as uuidv4 } from "uuid";
+import { WidgetConfig } from "../../interfaces/widget";
 
 interface WidgetManagerProps {
-  onAddWidget: (widget: {
-    id: string;
-    x: number;
-    y: number;
-    w: number;
-    h: number;
-    component: keyof typeof Components;
-    props?: Record<string, any>;
-  }) => void;
+  onAddWidget: (widget: WidgetConfig) => void;
 }
 
 const WidgetManager: React.FC<WidgetManagerProps> = ({ onAddWidget }) => {
@@ -40,9 +33,10 @@ const WidgetManager: React.FC<WidgetManagerProps> = ({ onAddWidget }) => {
     if (selectedWidget) {
       onAddWidget({
         id: uuidv4(),
+        i: Date.now().toString(),
         x: 0,
         y: 0,
-        w: 25,
+        w: 50,
         h: 20,
         component: selectedWidget,
       });

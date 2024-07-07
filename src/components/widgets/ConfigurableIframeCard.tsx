@@ -9,8 +9,9 @@ import {
   Button,
   useColorModeValue,
 } from "@chakra-ui/react";
-import WidgetBase from "../WidgetBase";
-import { useLocalStorage } from "../../lib/useLocalStorage";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
+import { useWidgetConfig } from "../../hooks/useWidgetConfig";
 
 interface IframeConfig {
   url: string;
@@ -18,11 +19,6 @@ interface IframeConfig {
   allowPaymentRequest: boolean;
   loading: "eager" | "lazy";
   sandbox: string[];
-}
-
-interface ConfigurableIframeCardProps {
-  id: string;
-  editMode: boolean;
 }
 
 const defaultConfig: IframeConfig = {
@@ -33,48 +29,59 @@ const defaultConfig: IframeConfig = {
   sandbox: ["allow-scripts", "allow-same-origin"],
 };
 
-const ConfigurableIframeCard: React.FC<ConfigurableIframeCardProps> = ({
-  id,
-  editMode,
-}) => {
-  const [config, setConfig] = useLocalStorage<IframeConfig>(
-    `iframeConfig_${id}`,
-    defaultConfig
+const IframeContent: React.FC<WidgetProps<IframeConfig>> = (props) => {
+  const [config] = useWidgetConfig(props);
+
+  return (
+    <Box
+      borderWidth="1px"
+      borderRadius="md"
+      overflow="hidden"
+      w="100%"
+      h="100%"
+      position="relative"
+    >
+      <iframe
+        src={config.url}
+        allowFullScreen={config.allowFullscreen}
+        loading={config.loading}
+        sandbox={config.sandbox?.join(" ")}
+        style={{
+          border: "none",
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+        }}
+        {...(config.allowPaymentRequest ? { allowPaymentRequest: true } : {})}
+      />
+    </Box>
   );
+};
 
-  const bgColor = useColorModeValue("white", "gray.700");
-  const borderColor = useColorModeValue("gray.200", "gray.600");
-
-  const handleConfigChange = (key: keyof IframeConfig, value: any) => {
-    setConfig((prev) => ({ ...prev, [key]: value }));
-  };
+const IframeOptions: React.FC<WidgetProps<IframeConfig>> = (props) => {
+  const [config, updateConfig] = useWidgetConfig(props);
 
   const toggleSandboxOption = (option: string) => {
-    setConfig((prev) => ({
-      ...prev,
-      sandbox: prev.sandbox.includes(option)
-        ? prev.sandbox.filter((item) => item !== option)
-        : [...prev.sandbox, option],
-    }));
+    updateConfig({
+      sandbox: config.sandbox.includes(option)
+        ? config.sandbox.filter((item) => item !== option)
+        : [...config.sandbox, option],
+    });
   };
 
-  const resetConfig = () => {
-    setConfig(defaultConfig);
-  };
-
-  const renderSettings = () => (
+  return (
     <VStack spacing={4} align="stretch" p={4}>
       <Input
         placeholder="URL dell'iframe"
         value={config.url}
-        onChange={(e) => handleConfigChange("url", e.target.value)}
+        onChange={(e) => updateConfig({ url: e.target.value })}
       />
       <HStack>
         <Switch
           isChecked={config.allowFullscreen}
-          onChange={(e) =>
-            handleConfigChange("allowFullscreen", e.target.checked)
-          }
+          onChange={(e) => updateConfig({ allowFullscreen: e.target.checked })}
         />
         <Text>Permetti Fullscreen</Text>
       </HStack>
@@ -82,7 +89,7 @@ const ConfigurableIframeCard: React.FC<ConfigurableIframeCardProps> = ({
         <Switch
           isChecked={config.allowPaymentRequest}
           onChange={(e) =>
-            handleConfigChange("allowPaymentRequest", e.target.checked)
+            updateConfig({ allowPaymentRequest: e.target.checked })
           }
         />
         <Text>Permetti Richieste di Pagamento</Text>
@@ -92,14 +99,14 @@ const ConfigurableIframeCard: React.FC<ConfigurableIframeCardProps> = ({
         <Button
           size="sm"
           colorScheme={config.loading === "eager" ? "blue" : "gray"}
-          onClick={() => handleConfigChange("loading", "eager")}
+          onClick={() => updateConfig({ loading: "eager" })}
         >
           Eager
         </Button>
         <Button
           size="sm"
           colorScheme={config.loading === "lazy" ? "blue" : "gray"}
-          onClick={() => handleConfigChange("loading", "lazy")}
+          onClick={() => updateConfig({ loading: "lazy" })}
         >
           Lazy
         </Button>
@@ -122,44 +129,17 @@ const ConfigurableIframeCard: React.FC<ConfigurableIframeCardProps> = ({
           </Button>
         ))}
       </HStack>
-      <Button onClick={resetConfig} colorScheme="red">
+      <Button onClick={() => updateConfig(defaultConfig)} colorScheme="red">
         Reimposta Configurazione
       </Button>
     </VStack>
   );
-
-  const renderContent = () => (
-    <Box
-      borderWidth="1px"
-      borderRadius="md"
-      overflow="hidden"
-      w="100%"
-      h="100%"
-      position="relative"
-    >
-      <iframe
-        src={config.url}
-        allowFullScreen={config.allowFullscreen}
-        loading={config.loading}
-        sandbox={config.sandbox.join(" ")}
-        style={{
-          border: "none",
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-        }}
-        {...(config.allowPaymentRequest ? { allowPaymentRequest: true } : {})}
-      />
-    </Box>
-  );
-
-  return (
-    <WidgetBase editMode={editMode} settings={renderSettings()}>
-      {renderContent()}
-    </WidgetBase>
-  );
 };
+
+const ConfigurableIframeCard = withWidgetBase<IframeConfig>({
+  renderWidget: (props) => <IframeContent {...props} />,
+  renderOptions: (props) => <IframeOptions {...props} />,
+  defaultConfig,
+});
 
 export default ConfigurableIframeCard;

@@ -5,8 +5,6 @@ import {
   Textarea,
   Select,
   Input,
-  VStack,
-  HStack,
   Text,
   NumberInput,
   NumberInputField,
@@ -15,51 +13,81 @@ import {
   NumberDecrementStepper,
   SimpleGrid,
 } from "@chakra-ui/react";
-import WidgetBase from "../WidgetBase";
-import { useLocalStorage } from "../../lib/useLocalStorage";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
+import { useWidgetConfig } from "../../hooks/useWidgetConfig";
 
-interface PostItProps {
-  id: string;
-  editMode: boolean;
+interface PostItConfig {
+  content: string;
+  font: string;
+  fontSize: number;
+  color: string;
+  textColor: string;
 }
 
-const PostIt: React.FC<PostItProps> = ({ id, editMode }) => {
-  const [content, setContent] = useLocalStorage(
-    `postit_${id}_content`,
-    "Nuovo Post-It"
-  );
-  const [font, setFont] = useLocalStorage(`postit_${id}_font`, "Arial");
-  const [fontSize, setFontSize] = useLocalStorage(`postit_${id}_fontSize`, 16);
-  const [color, setColor] = useLocalStorage(`postit_${id}_color`, "#FFFF88");
-  const [textColor, setTextColor] = useLocalStorage(
-    `postit_${id}_textColor`,
-    "#000000"
-  );
+const defaultConfig: PostItConfig = {
+  content: "Nuovo Post-It",
+  font: "Arial",
+  fontSize: 16,
+  color: "#FFFF88",
+  textColor: "#000000",
+};
+
+const PostItContent: React.FC<WidgetProps<PostItConfig>> = (props) => {
+  const [config, updateConfig] = useWidgetConfig(props);
 
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContent(e.target.value);
+    updateConfig({ content: e.target.value });
   };
 
+  return (
+    <Box
+      bg={config.color}
+      p={4}
+      borderRadius="md"
+      boxShadow="md"
+      height="100%"
+      width="100%"
+    >
+      <Textarea
+        value={config.content}
+        onChange={handleContentChange}
+        fontFamily={config.font}
+        fontSize={`${config.fontSize}px`}
+        color={config.textColor}
+        height="100%"
+        border="none"
+        resize="none"
+        bg="transparent"
+        _focus={{ boxShadow: "none" }}
+      />
+    </Box>
+  );
+};
+
+const PostItOptions: React.FC<WidgetProps<PostItConfig>> = (props) => {
+  const [config, updateConfig] = useWidgetConfig(props);
+
   const handleFontChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setFont(e.target.value);
+    updateConfig({ font: e.target.value });
   };
 
   const handleFontSizeChange = (valueString: string) => {
-    setFontSize(parseInt(valueString));
+    updateConfig({ fontSize: parseInt(valueString) });
   };
 
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setColor(e.target.value);
+    updateConfig({ color: e.target.value });
   };
 
   const handleTextColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setTextColor(e.target.value);
+    updateConfig({ textColor: e.target.value });
   };
 
-  const settings = (
+  return (
     <SimpleGrid columns={2} gap={2}>
       <Text width="100px">Font:</Text>
-      <Select value={font} onChange={handleFontChange}>
+      <Select value={config.font} onChange={handleFontChange}>
         <option value="Arial">Arial</option>
         <option value="Helvetica">Helvetica</option>
         <option value="Times New Roman">Times New Roman</option>
@@ -70,7 +98,7 @@ const PostIt: React.FC<PostItProps> = ({ id, editMode }) => {
 
       <Text width="100px">Font Size:</Text>
       <NumberInput
-        value={fontSize}
+        value={config.fontSize}
         onChange={handleFontSizeChange}
         min={8}
         max={72}
@@ -83,48 +111,22 @@ const PostIt: React.FC<PostItProps> = ({ id, editMode }) => {
       </NumberInput>
 
       <Text width="100px">Background:</Text>
-      <Input type="color" value={color} onChange={handleColorChange} />
+      <Input type="color" value={config.color} onChange={handleColorChange} />
 
       <Text width="100px">Text Color:</Text>
-      <Input type="color" value={textColor} onChange={handleTextColorChange} />
-      <Text width="100px">Content:</Text>
-      <Textarea
-        value={content}
-        onChange={handleContentChange}
-        placeholder="Inserisci il contenuto del Post-It"
+      <Input
+        type="color"
+        value={config.textColor}
+        onChange={handleTextColorChange}
       />
     </SimpleGrid>
   );
-
-  const postItContent = (
-    <Box
-      bg={color}
-      p={4}
-      borderRadius="md"
-      boxShadow="md"
-      height="100%"
-      width="100%"
-    >
-      <Textarea
-        value={content}
-        onChange={handleContentChange}
-        fontFamily={font}
-        fontSize={`${fontSize}px`}
-        color={textColor}
-        height="100%"
-        border="none"
-        resize="none"
-        bg="transparent"
-        _focus={{ boxShadow: "none" }}
-      />
-    </Box>
-  );
-
-  return (
-   <>
-      {postItContent}
-      </>
-  );
 };
-PostIt.Options=settings
+
+const PostIt = withWidgetBase<PostItConfig>({
+  renderWidget: (props) => <PostItContent {...props} />,
+  renderOptions: (props) => <PostItOptions {...props} />,
+  defaultConfig,
+});
+
 export default PostIt;

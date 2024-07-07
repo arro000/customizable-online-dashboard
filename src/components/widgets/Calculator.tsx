@@ -9,55 +9,59 @@ import {
   Switch,
   Text,
   HStack,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
 } from "@chakra-ui/react";
-import WidgetBase from "../WidgetBase";
-import { useLocalStorage } from "../../lib/useLocalStorage";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
+import { useWidgetConfig } from "../../hooks/useWidgetConfig";
 
-interface CalculatorProps {
-  id: string;
-  editMode: boolean;
+interface CalculatorConfig {
+  display: string;
+  isScientific: boolean;
+  precision: number;
 }
 
-const Calculator: React.FC<CalculatorProps> = ({ id, editMode }) => {
-  const [display, setDisplay] = useLocalStorage(
-    `calculator_${id}_display`,
-    "0"
-  );
-  const [isScientific, setIsScientific] = useLocalStorage(
-    `calculator_${id}_isScientific`,
-    false
-  );
+const defaultConfig: CalculatorConfig = {
+  display: "0",
+  isScientific: false,
+  precision: 2,
+};
+
+const CalculatorContent: React.FC<WidgetProps<CalculatorConfig>> = (props) => {
+  const [config, updateConfig] = useWidgetConfig(props);
 
   const bgColor = useColorModeValue("gray.100", "gray.700");
   const buttonColor = useColorModeValue("gray.200", "gray.600");
 
   const handleClick = (value: string) => {
-    setDisplay((prev) => {
-      if (prev === "0") {
-        return value;
-      }
-      return prev + value;
-    });
+    updateConfig((prev) => ({
+      display: prev.display === "0" ? value : prev.display + value,
+    }));
   };
 
   const handleClear = () => {
-    setDisplay("0");
+    updateConfig({ display: "0" });
   };
 
   const handleCalculate = () => {
     try {
-      setDisplay(eval(display).toString());
+      const result = eval(config.display);
+      updateConfig({ display: Number(result).toFixed(config.precision) });
     } catch (error) {
-      setDisplay("Error");
+      updateConfig({ display: "Error" });
     }
   };
 
   const handleScientific = (func: string) => {
     try {
-      const result = eval(`Math.${func}(${display})`);
-      setDisplay(result.toString());
+      const result = eval(`Math.${func}(${config.display})`);
+      updateConfig({ display: Number(result).toFixed(config.precision) });
     } catch (error) {
-      setDisplay("Error");
+      updateConfig({ display: "Error" });
     }
   };
 
@@ -91,49 +95,90 @@ const Calculator: React.FC<CalculatorProps> = ({ id, editMode }) => {
     { label: "abs", action: () => handleScientific("abs") },
   ];
 
-  const content = (
-    <VStack spacing={4}>
-      <HStack>
-        <Text>Simple</Text>
-        <Switch
-          isChecked={isScientific}
-          onChange={(e) => setIsScientific(e.target.checked)}
+  return (
+    <Box p={4} bg={bgColor} borderRadius="md" height="100%" width="100%">
+      <VStack spacing={4} height="100%">
+        <HStack>
+          <Text>Simple</Text>
+          <Switch
+            isChecked={config.isScientific}
+            onChange={(e) => updateConfig({ isScientific: e.target.checked })}
+          />
+          <Text>Scientific</Text>
+        </HStack>
+        <Input
+          value={config.display}
+          readOnly
+          textAlign="right"
+          fontSize="2xl"
+          mb={4}
         />
-        <Text>Scientific</Text>
-      </HStack>
-      <Input value={display} readOnly textAlign="right" fontSize="2xl" mb={4} />
-      <Grid templateColumns="repeat(4, 1fr)" gap={2}>
-        {buttons.map((btn, index) => (
-          <Button key={index} onClick={btn.action} bg={buttonColor} size="lg">
-            {btn.label}
-          </Button>
-        ))}
-      </Grid>
-      {isScientific && (
-        <Grid templateColumns="repeat(4, 1fr)" gap={2} mt={2}>
-          {scientificButtons.map((btn, index) => (
+        <Grid templateColumns="repeat(4, 1fr)" gap={2} flex={1}>
+          {buttons.map((btn, index) => (
             <Button key={index} onClick={btn.action} bg={buttonColor} size="lg">
               {btn.label}
             </Button>
           ))}
         </Grid>
-      )}
-      <Button onClick={handleClear} colorScheme="red" width="100%">
-        Clear
-      </Button>
-    </VStack>
-  );
-
-  // Non ci sono impostazioni specifiche per questo widget
-  const settings = null;
-
-  return (
-    <WidgetBase editMode={editMode} settings={settings}>
-      <Box p={4} bg={bgColor} borderRadius="md">
-        {content}
-      </Box>
-    </WidgetBase>
+        {config.isScientific && (
+          <Grid templateColumns="repeat(4, 1fr)" gap={2} mt={2}>
+            {scientificButtons.map((btn, index) => (
+              <Button
+                key={index}
+                onClick={btn.action}
+                bg={buttonColor}
+                size="lg"
+              >
+                {btn.label}
+              </Button>
+            ))}
+          </Grid>
+        )}
+        <Button onClick={handleClear} colorScheme="red" width="100%">
+          Clear
+        </Button>
+      </VStack>
+    </Box>
   );
 };
+
+const CalculatorOptions: React.FC<WidgetProps<CalculatorConfig>> = (props) => {
+  const [config, updateConfig] = useWidgetConfig(props);
+
+  return (
+    <VStack spacing={4} align="stretch">
+      <HStack justify="space-between">
+        <Text>Scientific Mode:</Text>
+        <Switch
+          isChecked={config.isScientific}
+          onChange={(e) => updateConfig({ isScientific: e.target.checked })}
+        />
+      </HStack>
+      <HStack justify="space-between">
+        <Text>Precision:</Text>
+        <NumberInput
+          value={config.precision}
+          onChange={(_, value) => updateConfig({ precision: value })}
+          min={0}
+          max={10}
+          step={1}
+          w="100px"
+        >
+          <NumberInputField />
+          <NumberInputStepper>
+            <NumberIncrementStepper />
+            <NumberDecrementStepper />
+          </NumberInputStepper>
+        </NumberInput>
+      </HStack>
+    </VStack>
+  );
+};
+
+const Calculator = withWidgetBase({
+  renderWidget: (props) => <CalculatorContent {...props} />,
+  renderOptions: (props) => <CalculatorOptions {...props} />,
+  defaultConfig,
+});
 
 export default Calculator;

@@ -5,13 +5,17 @@ interface WidgetProps {
   editMode: boolean;
   settings?: React.ReactNode;
   children: React.ReactNode;
-  configs?: React.ReactNode;
+}
+
+interface WidgetComponentProps {
+  widget: ReactNode;
+  options: ReactNode;
+  config: any;
 }
 
 const WidgetBase = (props: WidgetProps) => {
   const bgColor = useColorModeValue("white", "gray.700");
   const borderColor = useColorModeValue("gray.200", "gray.600");
-  
 
   return (
     <Box
