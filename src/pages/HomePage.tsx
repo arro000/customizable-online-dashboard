@@ -8,6 +8,7 @@ import {
   Button,
 } from "@chakra-ui/react";
 import { Clock, DynamicBackground } from "../components/widgets";
+import  WidgetBase from "../components/WidgetBase.tsx";
 import WidgetManager from "../components/managers/WidgetManager";
 import * as Components from "../components/widgets/index";
 import GridLayout from "../components/layout/GridLayout";
@@ -55,7 +56,7 @@ const App: React.FC = () => {
   return (
     <ChakraProvider>
       <Box p={4}>
-        <Flex direction="row" justifyContent="flex-end" gap={5}>
+        <Flex direction="row" justifyContent="flex-end" wrap="wrap" gap={5}>
           <BackgroundSelector editMode={editMode} />
 
           {editMode && (
@@ -75,7 +76,7 @@ const App: React.FC = () => {
             setEditMode={setEditMode}
           ></EditModeToggleButton>
         </Flex>
-        <VStack spacing={4} align="stretch">
+        <VStack align="stretch">
           <Flex justifyContent="center">
             <Clock />
           </Flex>
@@ -87,10 +88,14 @@ const App: React.FC = () => {
             onDeleteWidget={handleDeleteWidget}
             renderWidget={(item: WidgetConfig) => {
               const WidgetComponent = (Components as any)[item.component];
+              const WidgetComponentOptions = WidgetComponent.Options
+              const WidgetComponentConfigs=WidgetComponent.Configs
               return (
+               <WidgetBase editMode={editMode} settings={WidgetComponentOptions}>
                 <WidgetComponent
                   {...{ ...item.props, editMode, id: item.id }}
                 />
+                </WidgetBase>
               );
             }}
           />

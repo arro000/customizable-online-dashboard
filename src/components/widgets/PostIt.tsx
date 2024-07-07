@@ -121,10 +121,10 @@ const PostIt: React.FC<PostItProps> = ({ id, editMode }) => {
   );
 
   return (
-    <WidgetBase editMode={editMode} settings={settings}>
+   <>
       {postItContent}
-    </WidgetBase>
+      </>
   );
 };
-
+PostIt.Options=settings
 export default PostIt;

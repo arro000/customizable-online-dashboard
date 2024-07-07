@@ -42,7 +42,7 @@ const WidgetManager: React.FC<WidgetManagerProps> = ({ onAddWidget }) => {
         id: uuidv4(),
         x: 0,
         y: 0,
-        w: 15,
+        w: 25,
         h: 20,
         component: selectedWidget,
       });
