@@ -21,7 +21,7 @@ const WidgetBase = (props: WidgetProps) => {
     <Box
       borderWidth="1px"
       borderRadius="lg"
-      overflow="scroll"
+      overflow="auto"
       width="100%"
       height="100%"
       position="relative"
