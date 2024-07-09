@@ -34,7 +34,6 @@ const WidgetBase: React.FC<WidgetProps> = ({
   const borderColor = useColorModeValue("gray.200", "gray.600");
   return (
     <Box
-      borderWidth="1px"
       borderRadius="lg"
       overflow="hidden"
       width="100%"

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   Box,
   VStack,
@@ -31,6 +31,7 @@ const EmbeddedContentWidgetContent: React.FC<
   WidgetProps<EmbeddedContentWidgetConfig>
 > = ({ config, onConfigChange }) => {
   const [key, setKey] = useState(0);
+  const containerRef = useRef<HTMLDivElement>(null);
   config = { ...defaultConfig, ...config };
 
   useEffect(() => {
@@ -42,6 +43,29 @@ const EmbeddedContentWidgetContent: React.FC<
     }
   }, [config.refreshInterval]);
 
+  useEffect(() => {
+    if (containerRef.current) {
+      const container = containerRef.current;
+      container.innerHTML = config.embedCode;
+
+      // Extract and load external scripts
+      const scripts = container.getElementsByTagName("script");
+      Array.from(scripts).forEach((script) => {
+        if (script.src) {
+          const newScript = document.createElement("script");
+          newScript.src = script.src;
+          newScript.async = true;
+          document.body.appendChild(newScript);
+        } else if (script.textContent) {
+          const newScript = document.createElement("script");
+          newScript.textContent = script.textContent;
+          document.body.appendChild(newScript);
+        }
+        script.parentNode?.removeChild(script);
+      });
+    }
+  }, [config.embedCode, key]);
+
   const [aspectWidth, aspectHeight] = config.aspectRatio.split(":").map(Number);
   const paddingTop = `${(aspectHeight / aspectWidth) * 100}%`;
 
@@ -50,8 +74,8 @@ const EmbeddedContentWidgetContent: React.FC<
       <Box position="relative" paddingTop={paddingTop}>
         <Box position="absolute" top="0" left="0" right="0" bottom="0">
           <div
+            ref={containerRef}
             key={key}
-            dangerouslySetInnerHTML={{ __html: config.embedCode }}
             style={{ width: "100%", height: "100%" }}
           />
         </Box>
@@ -85,7 +109,7 @@ const EmbeddedContentWidgetOptions: React.FC<
   );
 
   return (
-    <Box p={4}>
+    <Box>
       <VStack spacing={4} align="stretch">
         <Textarea
           value={config.embedCode}
@@ -123,6 +147,7 @@ const EmbeddedContentWidget = withWidgetBase<EmbeddedContentWidgetConfig>({
   renderWidget: (props) => <EmbeddedContentWidgetContent {...props} />,
   renderOptions: (props) => <EmbeddedContentWidgetOptions {...props} />,
   defaultConfig,
+  widgetStyleConfig: { bg: "#ffffff00", borderColor: "none" },
 });
 
 export default EmbeddedContentWidget;

@@ -363,7 +363,7 @@ const Clock = withWidgetBase<ClockConfig>({
   renderWidget: (props) => <ClockContent {...props} />,
   renderOptions: (props) => <ClockOptions {...props} />,
   defaultConfig,
-  widgetStyleConfig: { bg: "#ffffff00" },
+  widgetStyleConfig: { bg: "#ffffff00", borderColor: "none" },
 });
 
 export default Clock;

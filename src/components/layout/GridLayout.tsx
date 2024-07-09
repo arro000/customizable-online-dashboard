@@ -113,14 +113,11 @@ const GridLayout: React.FC<GridLayoutProps> = ({
           <Flex
             key={item.i}
             position="relative"
-            borderWidth={editMode ? "2px" : "0px"}
-            borderStyle={editMode ? "dashed" : "solid"}
-            borderColor={editMode ? "blue.500" : "gray.200"}
+            bg={editMode ? "gray.800" : "none"}
             borderRadius="lg"
             overflow="hidden"
             direction="column"
             p={editMode ? 2 : 0}
-            bg={"gray.800"}
             zIndex={1}
             style={
               fullscreenWidget === item.i

@@ -35,7 +35,7 @@ function withWidgetBase<T extends WidgetConfig>({
     const widgetProps: WidgetProps<T> = {
       id,
       editMode,
-      config,
+      config: { ...defaultConfig, ...config },
       onConfigChange: handleConfigChange,
     };
 

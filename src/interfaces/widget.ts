@@ -39,5 +39,6 @@ export interface WidgetComponentProps<T extends WidgetConfig = WidgetConfig> {
   defaultConfig: T;
   widgetStyleConfig?: {
     bg: string;
+    borderColor:string;
   }
 }
