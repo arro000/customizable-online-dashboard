@@ -3,7 +3,15 @@ import InternalGridLayout, { Layout, DropCallback } from "react-grid-layout";
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { Box, IconButton, Flex, Button } from "@chakra-ui/react";
-import { DeleteIcon, DragHandleIcon, ExternalLinkIcon, ArrowRightIcon, ArrowDownIcon, LockIcon, UnlockIcon } from "@chakra-ui/icons";
+import {
+  DeleteIcon,
+  DragHandleIcon,
+  ExternalLinkIcon,
+  ArrowRightIcon,
+  ArrowDownIcon,
+  LockIcon,
+  UnlockIcon,
+} from "@chakra-ui/icons";
 import { color } from "framer-motion";
 import { WidgetConfig } from "../../interfaces/widget";
 
@@ -25,9 +33,9 @@ const GridLayout: React.FC<GridLayoutProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [fullscreenWidget, setFullscreenWidget] = useState<string | null>(null);
-  const [draggableWidgets, setDraggableWidgets] = useState<{ [key: string]: boolean }>({});
-  
-  
+  const [draggableWidgets, setDraggableWidgets] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   const onLayoutChange = (newLayout: Layout[]): void => {
     setWidgets((prevWidgets) =>
@@ -79,7 +87,6 @@ const GridLayout: React.FC<GridLayoutProps> = ({
     );
   };
 
-  
   const width = window.innerWidth;
 
   return (
@@ -91,7 +98,6 @@ const GridLayout: React.FC<GridLayoutProps> = ({
         onDragStop={onDragStop}
         onResizeStart={onResizeStart}
         onResizeStop={onResizeStop}
-        
         rowHeight={10}
         width={width}
         cols={100 * (width / 800)}
@@ -104,7 +110,7 @@ const GridLayout: React.FC<GridLayoutProps> = ({
         isDroppable={true}
       >
         {widgets.map((item) => (
-          <Box
+          <Flex
             key={item.i}
             position="relative"
             borderWidth={editMode ? "2px" : "0px"}
@@ -112,15 +118,34 @@ const GridLayout: React.FC<GridLayoutProps> = ({
             borderColor={editMode ? "blue.500" : "gray.200"}
             borderRadius="lg"
             overflow="hidden"
+            direction="column"
             p={editMode ? 2 : 0}
             bg={"gray.800"}
             zIndex={1}
-            style={fullscreenWidget === item.i ? { position: 'absolute', height:"100vh",width:"100vw" ,top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 } : {}}
+            style={
+              fullscreenWidget === item.i
+                ? {
+                    position: "absolute",
+                    height: "100vh",
+                    width: "100vw",
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    zIndex: 9999,
+                  }
+                : {}
+            }
           >
             {editMode && (
-              <Flex alignContent="center" alignItems="center" justifyContent="space-between" p={1} color="red.500">
+              <Flex
+                alignContent="center"
+                alignItems="center"
+                justifyContent="space-between"
+                p={1}
+                color="red.500"
+              >
                 <Flex>
-                 
                   <Flex
                     width="20px"
                     height="20px"
@@ -129,24 +154,29 @@ const GridLayout: React.FC<GridLayoutProps> = ({
                     zIndex={10}
                     className="react-grid-drag-handle"
                     cursor={draggableWidgets[item.i] ? "move" : "not-allowed"}
-                    {...(draggableWidgets[item.i] ? InternalGridLayout.draggableHandle : {})}
+                    {...(draggableWidgets[item.i]
+                      ? InternalGridLayout.draggableHandle
+                      : {})}
                   >
-                  
                     <DragHandleIcon />
-                     <DragHandleIcon />
-                      <DragHandleIcon />
                     <DragHandleIcon />
-                     <DragHandleIcon />
-                      <DragHandleIcon />
                     <DragHandleIcon />
-                     <DragHandleIcon />
-                      <DragHandleIcon />
+                    <DragHandleIcon />
+                    <DragHandleIcon />
+                    <DragHandleIcon />
+                    <DragHandleIcon />
+                    <DragHandleIcon />
+                    <DragHandleIcon />
                   </Flex>
                 </Flex>
                 <Flex>
                   <IconButton
                     icon={<ExternalLinkIcon />}
-                    aria-label={fullscreenWidget === item.i ? "Reduce" : "Expand to fullscreen"}
+                    aria-label={
+                      fullscreenWidget === item.i
+                        ? "Reduce"
+                        : "Expand to fullscreen"
+                    }
                     size="sm"
                     mr={1}
                     onClick={() => toggleFullscreen(item.i)}
@@ -176,9 +206,8 @@ const GridLayout: React.FC<GridLayoutProps> = ({
                 </Flex>
               </Flex>
             )}
-
-            {renderWidget(item)}
-          </Box>
+            <Box flexGrow={1}> {renderWidget(item)}</Box>
+          </Flex>
         ))}
       </InternalGridLayout>
     </Box>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   Box,
   Text,
@@ -13,61 +13,78 @@ import {
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
+  Switch,
 } from "@chakra-ui/react";
-import WidgetBase from "../WidgetBase";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
 
-const PomodoroTimer: React.FC = () => {
-  const [workTime, setWorkTime] = useState(() => {
-    const saved = localStorage.getItem("pomodoroWorkTime");
-    return saved ? parseInt(saved) : 25;
-  });
-  const [breakTime, setBreakTime] = useState(() => {
-    const saved = localStorage.getItem("pomodoroBreakTime");
-    return saved ? parseInt(saved) : 5;
-  });
-  const [time, setTime] = useState(workTime * 60);
-  const [isActive, setIsActive] = useState(false);
-  const [isWork, setIsWork] = useState(true);
+interface PomodoroTimerConfig {
+  workTime: number;
+  breakTime: number;
+  time: number;
+  isActive: boolean;
+  isWork: boolean;
+  autoStartBreaks: boolean;
+  autoStartPomodoros: boolean;
+  showProgressBar: boolean;
+}
 
+const defaultConfig: PomodoroTimerConfig = {
+  workTime: 25,
+  breakTime: 5,
+  time: 25 * 60,
+  isActive: false,
+  isWork: true,
+  autoStartBreaks: false,
+  autoStartPomodoros: false,
+  showProgressBar: true,
+};
+
+const PomodoroTimerContent: React.FC<WidgetProps<PomodoroTimerConfig>> = ({
+  config,
+  onConfigChange,
+}) => {
   const bgColor = useColorModeValue("white", "gray.700");
   const borderColor = useColorModeValue("gray.200", "gray.600");
 
   useEffect(() => {
-    localStorage.setItem("pomodoroWorkTime", workTime.toString());
-    localStorage.setItem("pomodoroBreakTime", breakTime.toString());
-  }, [workTime, breakTime]);
-
-  useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
 
-    if (isActive && time > 0) {
+    if (config.isActive && config.time > 0) {
       interval = setInterval(() => {
-        setTime((prevTime) => prevTime - 1);
+        onConfigChange({ time: config.time - 1 });
       }, 1000);
-    } else if (time === 0) {
-      if (isWork) {
-        setTime(breakTime * 60);
-        setIsWork(false);
+    } else if (config.time === 0) {
+      if (config.isWork) {
+        onConfigChange({
+          time: config.breakTime * 60,
+          isWork: false,
+          isActive: config.autoStartBreaks,
+        });
       } else {
-        setTime(workTime * 60);
-        setIsWork(true);
+        onConfigChange({
+          time: config.workTime * 60,
+          isWork: true,
+          isActive: config.autoStartPomodoros,
+        });
       }
-      setIsActive(false);
     }
 
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isActive, time, isWork, workTime, breakTime]);
+  }, [config, onConfigChange]);
 
-  const toggleTimer = () => {
-    setIsActive(!isActive);
-  };
+  const toggleTimer = useCallback(() => {
+    onConfigChange({ isActive: !config.isActive });
+  }, [config.isActive, onConfigChange]);
 
-  const resetTimer = () => {
-    setIsActive(false);
-    setTime(isWork ? workTime * 60 : breakTime * 60);
-  };
+  const resetTimer = useCallback(() => {
+    onConfigChange({
+      isActive: false,
+      time: config.isWork ? config.workTime * 60 : config.breakTime * 60,
+    });
+  }, [config.isWork, config.workTime, config.breakTime, onConfigChange]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
@@ -75,73 +92,130 @@ const PomodoroTimer: React.FC = () => {
     return `${minutes}:${remainingSeconds < 10 ? "0" : ""}${remainingSeconds}`;
   };
 
-  const progress = isWork
-    ? ((workTime * 60 - time) / (workTime * 60)) * 100
-    : ((breakTime * 60 - time) / (breakTime * 60)) * 100;
-
-  const handleWorkTimeChange = (value: number) => {
-    setWorkTime(value);
-    if (isWork) {
-      setTime(value * 60);
-    }
-  };
-
-  const handleBreakTimeChange = (value: number) => {
-    setBreakTime(value);
-    if (!isWork) {
-      setTime(value * 60);
-    }
-  };
+  const progress = config.isWork
+    ? ((config.workTime * 60 - config.time) / (config.workTime * 60)) * 100
+    : ((config.breakTime * 60 - config.time) / (config.breakTime * 60)) * 100;
 
   return (
-    <WidgetBase>
-      <VStack spacing={4} align="stretch">
-        <Text fontSize="xl" fontWeight="bold">
-          Pomodoro Timer
-        </Text>
+    <VStack spacing={4} align="stretch">
+      <Text fontSize="xl" fontWeight="bold">
+        Pomodoro Timer
+      </Text>
+      {config.showProgressBar ? (
         <CircularProgress value={progress} size="120px" thickness="4px">
-          <CircularProgressLabel>{formatTime(time)}</CircularProgressLabel>
+          <CircularProgressLabel>
+            {formatTime(config.time)}
+          </CircularProgressLabel>
         </CircularProgress>
-        <Text textAlign="center">{isWork ? "Work" : "Break"}</Text>
-        <HStack justify="center">
-          <Button onClick={toggleTimer}>{isActive ? "Pause" : "Start"}</Button>
-          <Button onClick={resetTimer}>Reset</Button>
-        </HStack>
-        <HStack justify="space-between">
-          <Text>Work Time (min):</Text>
-          <NumberInput
-            value={workTime}
-            onChange={(_, value) => handleWorkTimeChange(value)}
-            min={1}
-            max={60}
-            w="80px"
-          >
-            <NumberInputField />
-            <NumberInputStepper>
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput>
-        </HStack>
-        <HStack justify="space-between">
-          <Text>Break Time (min):</Text>
-          <NumberInput
-            value={breakTime}
-            onChange={(_, value) => handleBreakTimeChange(value)}
-            min={1}
-            max={30}
-            w="80px"
-          >
-            <NumberInputField />
-            <NumberInputStepper>
-              <NumberIncrementStepper />
-              <NumberDecrementStepper />
-            </NumberInputStepper>
-          </NumberInput>
-        </HStack>
-      </VStack>
-    </WidgetBase>
+      ) : (
+        <Text fontSize="3xl" textAlign="center">
+          {formatTime(config.time)}
+        </Text>
+      )}
+      <Text textAlign="center">{config.isWork ? "Work" : "Break"}</Text>
+      <HStack justify="center">
+        <Button onClick={toggleTimer}>
+          {config.isActive ? "Pause" : "Start"}
+        </Button>
+        <Button onClick={resetTimer}>Reset</Button>
+      </HStack>
+    </VStack>
   );
 };
+
+const PomodoroTimerOptions: React.FC<WidgetProps<PomodoroTimerConfig>> = ({
+  config,
+  onConfigChange,
+}) => {
+  const handleWorkTimeChange = useCallback(
+    (value: number) => {
+      onConfigChange({
+        workTime: value,
+        time: config.isWork ? value * 60 : config.time,
+      });
+    },
+    [config.isWork, config.time, onConfigChange]
+  );
+
+  const handleBreakTimeChange = useCallback(
+    (value: number) => {
+      onConfigChange({
+        breakTime: value,
+        time: !config.isWork ? value * 60 : config.time,
+      });
+    },
+    [config.isWork, config.time, onConfigChange]
+  );
+
+  return (
+    <VStack spacing={4} align="stretch">
+      <HStack justify="space-between">
+        <Text>Work Time (min):</Text>
+        <NumberInput
+          value={config.workTime}
+          onChange={(_, value) => handleWorkTimeChange(value)}
+          min={1}
+          max={60}
+          w="80px"
+        >
+          <NumberInputField />
+          <NumberInputStepper>
+            <NumberIncrementStepper />
+            <NumberDecrementStepper />
+          </NumberInputStepper>
+        </NumberInput>
+      </HStack>
+      <HStack justify="space-between">
+        <Text>Break Time (min):</Text>
+        <NumberInput
+          value={config.breakTime}
+          onChange={(_, value) => handleBreakTimeChange(value)}
+          min={1}
+          max={30}
+          w="80px"
+        >
+          <NumberInputField />
+          <NumberInputStepper>
+            <NumberIncrementStepper />
+            <NumberDecrementStepper />
+          </NumberInputStepper>
+        </NumberInput>
+      </HStack>
+      <HStack justify="space-between">
+        <Text>Auto-start Breaks:</Text>
+        <Switch
+          isChecked={config.autoStartBreaks}
+          onChange={(e) =>
+            onConfigChange({ autoStartBreaks: e.target.checked })
+          }
+        />
+      </HStack>
+      <HStack justify="space-between">
+        <Text>Auto-start Pomodoros:</Text>
+        <Switch
+          isChecked={config.autoStartPomodoros}
+          onChange={(e) =>
+            onConfigChange({ autoStartPomodoros: e.target.checked })
+          }
+        />
+      </HStack>
+      <HStack justify="space-between">
+        <Text>Show Progress Bar:</Text>
+        <Switch
+          isChecked={config.showProgressBar}
+          onChange={(e) =>
+            onConfigChange({ showProgressBar: e.target.checked })
+          }
+        />
+      </HStack>
+    </VStack>
+  );
+};
+
+const PomodoroTimer = withWidgetBase<PomodoroTimerConfig>({
+  renderWidget: (props) => <PomodoroTimerContent {...props} />,
+  renderOptions: (props) => <PomodoroTimerOptions {...props} />,
+  defaultConfig,
+});
 
 export default PomodoroTimer;

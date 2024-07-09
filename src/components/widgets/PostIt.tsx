@@ -20,8 +20,6 @@ import {
 } from "@chakra-ui/react";
 import withWidgetBase from "../hooks/withWidgetBase";
 import { WidgetProps } from "../../interfaces/widget";
-import { useWidgetConfig } from "../../hooks/useWidgetConfig";
-import { useLocalStorage } from "../../lib/useLocalStorage";
 
 interface PostItConfig {
   content: string;
@@ -31,6 +29,7 @@ interface PostItConfig {
   textColor: string;
   rotation: number;
   maxCharacters: number;
+  history: string[];
 }
 
 const defaultConfig: PostItConfig = {
@@ -41,37 +40,43 @@ const defaultConfig: PostItConfig = {
   textColor: "#000000",
   rotation: 0,
   maxCharacters: 200,
+  history: [],
 };
 
-const PostItContent: React.FC<WidgetProps<PostItConfig>> = (props) => {
-  const [config, updateConfig] = useWidgetConfig(props);
-  const [history, setHistory] = useLocalStorage<string[]>(`postIt_${props.id}_history`, []);
+const PostItContent: React.FC<WidgetProps<PostItConfig>> = ({
+  config,
+  onConfigChange,
+}) => {
   const toast = useToast();
 
-  const handleContentChange = useCallback((e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newContent = e.target.value;
-    if (newContent.length <= config.maxCharacters) {
-      updateConfig({ content: newContent });
-    } else {
-      toast({
-        title: "Character limit reached",
-        description: `Maximum ${config.maxCharacters} characters allowed`,
-        status: "warning",
-        duration: 3000,
-        isClosable: true,
-      });
-    }
-  }, [config, updateConfig, toast]);
+  const handleContentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      const newContent = e.target.value;
+      if (newContent.length <= config.maxCharacters) {
+        onConfigChange({ content: newContent });
+      } else {
+        toast({
+          title: "Character limit reached",
+          description: `Maximum ${config.maxCharacters} characters allowed`,
+          status: "warning",
+          duration: 3000,
+          isClosable: true,
+        });
+      }
+    },
+    [config.maxCharacters, onConfigChange, toast]
+  );
 
   const saveToHistory = useCallback(() => {
-    setHistory((prev) => [config.content, ...prev.slice(0, 9)]);
+    const newHistory = [config.content, ...config.history.slice(0, 9)];
+    onConfigChange({ history: newHistory });
     toast({
       title: "Content saved to history",
       status: "success",
       duration: 2000,
       isClosable: true,
     });
-  }, [config.content, setHistory, toast]);
+  }, [config.content, config.history, onConfigChange, toast]);
 
   if (!config) {
     return <Spinner />;
@@ -114,23 +119,26 @@ const PostItContent: React.FC<WidgetProps<PostItConfig>> = (props) => {
   );
 };
 
-const PostItOptions: React.FC<WidgetProps<PostItConfig>> = (props) => {
-  const [config, updateConfig] = useWidgetConfig(props);
-  const [history] = useLocalStorage<string[]>(`postIt_${props.id}_history`, []);
-
+const PostItOptions: React.FC<WidgetProps<PostItConfig>> = ({
+  config,
+  onConfigChange,
+}) => {
   if (!config) {
     return <Spinner />;
   }
 
   const handleChange = (key: keyof PostItConfig, value: any) => {
-    updateConfig({ [key]: value });
+    onConfigChange({ [key]: value });
   };
 
   return (
     <VStack spacing={4} align="stretch">
       <SimpleGrid columns={2} gap={2}>
         <Text width="100px">Font:</Text>
-        <Select value={config.font} onChange={(e) => handleChange('font', e.target.value)}>
+        <Select
+          value={config.font}
+          onChange={(e) => handleChange("font", e.target.value)}
+        >
           <option value="Arial">Arial</option>
           <option value="Helvetica">Helvetica</option>
           <option value="Times New Roman">Times New Roman</option>
@@ -142,7 +150,7 @@ const PostItOptions: React.FC<WidgetProps<PostItConfig>> = (props) => {
         <Text width="100px">Font Size:</Text>
         <NumberInput
           value={config.fontSize}
-          onChange={(_, value) => handleChange('fontSize', value)}
+          onChange={(_, value) => handleChange("fontSize", value)}
           min={8}
           max={72}
         >
@@ -154,19 +162,23 @@ const PostItOptions: React.FC<WidgetProps<PostItConfig>> = (props) => {
         </NumberInput>
 
         <Text width="100px">Background:</Text>
-        <Input type="color" value={config.color} onChange={(e) => handleChange('color', e.target.value)} />
+        <Input
+          type="color"
+          value={config.color}
+          onChange={(e) => handleChange("color", e.target.value)}
+        />
 
         <Text width="100px">Text Color:</Text>
         <Input
           type="color"
           value={config.textColor}
-          onChange={(e) => handleChange('textColor', e.target.value)}
+          onChange={(e) => handleChange("textColor", e.target.value)}
         />
 
         <Text width="100px">Rotation:</Text>
         <NumberInput
           value={config.rotation}
-          onChange={(_, value) => handleChange('rotation', value)}
+          onChange={(_, value) => handleChange("rotation", value)}
           min={-45}
           max={45}
         >
@@ -180,7 +192,7 @@ const PostItOptions: React.FC<WidgetProps<PostItConfig>> = (props) => {
         <Text width="100px">Max Characters:</Text>
         <NumberInput
           value={config.maxCharacters}
-          onChange={(_, value) => handleChange('maxCharacters', value)}
+          onChange={(_, value) => handleChange("maxCharacters", value)}
           min={50}
           max={500}
         >
@@ -194,8 +206,12 @@ const PostItOptions: React.FC<WidgetProps<PostItConfig>> = (props) => {
 
       <Text fontWeight="bold">History:</Text>
       <VStack align="stretch" maxHeight="200px" overflowY="auto">
-        {history.map((content, index) => (
-          <Button key={index} onClick={() => handleChange('content', content)} size="sm">
+        {config.history.map((content, index) => (
+          <Button
+            key={index}
+            onClick={() => handleChange("content", content)}
+            size="sm"
+          >
             {content.substring(0, 30)}...
           </Button>
         ))}

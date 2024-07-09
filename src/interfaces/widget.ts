@@ -37,4 +37,7 @@ export interface WidgetComponentProps<T extends WidgetConfig = WidgetConfig> {
   renderWidget: (props: WidgetProps<T>) => React.ReactNode;
   renderOptions: (props: WidgetProps<T>) => React.ReactNode;
   defaultConfig: T;
+  widgetStyleConfig?: {
+    bg: string;
+  }
 }

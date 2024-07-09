@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   Box,
   Button,
@@ -9,13 +9,26 @@ import {
   Spinner,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import WidgetBase from "../WidgetBase";
-import { useLocalStorage } from "../../lib/useLocalStorage";
-import { WidgetElementBaseProp } from "../../interfaces/widget";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
 
-interface RandomAnimalsXtremeProps extends WidgetElementBaseProp {
-  id: string;
+interface RandomAnimalsXtremeConfig {
+  animal: string;
+  action: string;
+  background: string;
+  imageUrl: string;
+  loading: boolean;
+  score: number;
 }
+
+const defaultConfig: RandomAnimalsXtremeConfig = {
+  animal: "",
+  action: "",
+  background: "",
+  imageUrl: "",
+  loading: false,
+  score: 0,
+};
 
 const animals = [
   "cat",
@@ -44,53 +57,36 @@ const backgrounds = [
   "volcano",
 ];
 
-const RandomAnimalsXtreme: React.FC<RandomAnimalsXtremeProps> = ({
-  id,
-  editMode,
-}) => {
-  const [animal, setAnimal] = useLocalStorage(`randomAnimals_${id}_animal`, "");
-  const [action, setAction] = useLocalStorage(`randomAnimals_${id}_action`, "");
-  const [background, setBackground] = useLocalStorage(
-    `randomAnimals_${id}_background`,
-    ""
-  );
-  const [imageUrl, setImageUrl] = useLocalStorage(
-    `randomAnimals_${id}_imageUrl`,
-    ""
-  );
-  const [loading, setLoading] = useLocalStorage(
-    `randomAnimals_${id}_loading`,
-    false
-  );
-  const [score, setScore] = useLocalStorage(`randomAnimals_${id}_score`, 0);
-
-  const generateRandomScene = () => {
-    setLoading(true);
+const RandomAnimalsXtremeContent: React.FC<
+  WidgetProps<RandomAnimalsXtremeConfig>
+> = ({ config, onConfigChange }) => {
+  const generateRandomScene = useCallback(() => {
+    onConfigChange({ loading: true });
     const newAnimal = animals[Math.floor(Math.random() * animals.length)];
     const newAction = actions[Math.floor(Math.random() * actions.length)];
     const newBackground =
       backgrounds[Math.floor(Math.random() * backgrounds.length)];
-    setAnimal(newAnimal);
-    setAction(newAction);
-    setBackground(newBackground);
 
     // Simula il caricamento di un'immagine
     setTimeout(() => {
-      setImageUrl(
-        `https://source.unsplash.com/400x300/?${newAnimal},${newBackground}`
-      );
-      setLoading(false);
-      setScore((prevScore) => prevScore + Math.floor(Math.random() * 100) + 1);
+      onConfigChange({
+        animal: newAnimal,
+        action: newAction,
+        background: newBackground,
+        imageUrl: `https://source.unsplash.com/400x300/?${newAnimal},${newBackground}`,
+        loading: false,
+        score: config.score + Math.floor(Math.random() * 100) + 1,
+      });
     }, 1500);
-  };
+  }, [config.score, onConfigChange]);
 
   useEffect(() => {
-    if (!animal || !action || !background) {
+    if (!config.animal || !config.action || !config.background) {
       generateRandomScene();
     }
-  }, []);
+  }, [config.animal, config.action, config.background, generateRandomScene]);
 
-  const content = (
+  return (
     <VStack spacing={4}>
       <Text fontSize="2xl" fontWeight="bold">
         Random Animals Xtreme!
@@ -102,7 +98,7 @@ const RandomAnimalsXtreme: React.FC<RandomAnimalsXtremeProps> = ({
         overflow="hidden"
         borderRadius="md"
       >
-        {loading ? (
+        {config.loading ? (
           <Spinner
             size="xl"
             position="absolute"
@@ -117,7 +113,7 @@ const RandomAnimalsXtreme: React.FC<RandomAnimalsXtremeProps> = ({
             transition={{ duration: 0.5 }}
           >
             <Image
-              src={imageUrl}
+              src={config.imageUrl}
               alt="Random scene"
               objectFit="cover"
               width="100%"
@@ -141,9 +137,9 @@ const RandomAnimalsXtreme: React.FC<RandomAnimalsXtremeProps> = ({
                 textAlign="center"
                 textShadow="2px 2px 4px rgba(0,0,0,0.5)"
               >
-                {`${animal.toUpperCase()} ${action.toUpperCase()}`}
+                {`${config.animal.toUpperCase()} ${config.action.toUpperCase()}`}
                 <br />
-                {`ON ${background.toUpperCase()}!`}
+                {`ON ${config.background.toUpperCase()}!`}
               </Text>
             </Box>
           </motion.div>
@@ -153,21 +149,23 @@ const RandomAnimalsXtreme: React.FC<RandomAnimalsXtremeProps> = ({
         <Button
           colorScheme="teal"
           onClick={generateRandomScene}
-          isLoading={loading}
+          isLoading={config.loading}
         >
           Generate New Scene!
         </Button>
         <Box bg="yellow.400" px={3} py={2} borderRadius="md">
-          <Text fontWeight="bold">Score: {score}</Text>
+          <Text fontWeight="bold">Score: {config.score}</Text>
         </Box>
       </HStack>
     </VStack>
   );
-
-  // Non ci sono impostazioni specifiche per questo widget
-  const settings = null;
-
-  return <WidgetBase editMode={editMode}>{content}</WidgetBase>;
 };
+
+const RandomAnimalsXtreme = withWidgetBase<RandomAnimalsXtremeConfig>({
+  renderWidget: (props) => <RandomAnimalsXtremeContent {...props} />,
+  rendereOptions: () => null,
+
+  defaultConfig,
+});
 
 export default RandomAnimalsXtreme;

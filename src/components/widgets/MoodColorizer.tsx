@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback } from "react";
 import {
   Box,
   Text,
@@ -7,7 +7,8 @@ import {
   useColorModeValue,
   Button,
 } from "@chakra-ui/react";
-import WidgetBase from "../WidgetBase";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
 
 interface MoodColor {
   [key: string]: string;
@@ -115,31 +116,47 @@ const moodPhrases: { [key: string]: string[] } = {
   ],
 };
 
-const MoodColorizer: React.FC = () => {
-  const [mood, setMood] = useState<string>("happy");
-  const [phrase, setPhrase] = useState<string>(moodPhrases.happy[0]);
+interface MoodColorizerConfig {
+  mood: string;
+  phrase: string;
+}
+
+const defaultConfig: MoodColorizerConfig = {
+  mood: "happy",
+  phrase: moodPhrases.happy[0],
+};
+
+const MoodColorizerContent: React.FC<WidgetProps<MoodColorizerConfig>> = ({
+  config: rawConfig,
+  onConfigChange,
+}) => {
+  const config = rawConfig ?? defaultConfig;
   const bgColor = useColorModeValue("white", "gray.700");
   const borderColor = useColorModeValue("gray.200", "gray.600");
 
-  const handleMoodChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newMood = event.target.value;
-    setMood(newMood);
-    const phrases = moodPhrases[newMood];
-    setPhrase(phrases[Math.floor(Math.random() * phrases.length)]);
-  };
+  const handleMoodChange = useCallback(
+    (event: React.ChangeEvent<HTMLSelectElement>) => {
+      const newMood = event.target.value;
+      const phrases = moodPhrases[newMood];
+      const newPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+      onConfigChange({ mood: newMood, phrase: newPhrase });
+    },
+    [onConfigChange]
+  );
 
-  const generateNewPhrase = () => {
-    const phrases = moodPhrases[mood];
-    setPhrase(phrases[Math.floor(Math.random() * phrases.length)]);
-  };
+  const generateNewPhrase = useCallback(() => {
+    const phrases = moodPhrases[config.mood];
+    const newPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+    onConfigChange({ phrase: newPhrase });
+  }, [config.mood, onConfigChange]);
 
   return (
-    <WidgetBase>
+    <Box p={4}>
       <VStack spacing={4} align="stretch">
         <Text fontSize="xl" fontWeight="bold">
           Mood Colorizer
         </Text>
-        <Select value={mood} onChange={handleMoodChange}>
+        <Select value={config.mood} onChange={handleMoodChange}>
           {Object.keys(moodColors).map((moodOption) => (
             <option key={moodOption} value={moodOption}>
               {moodOption.charAt(0).toUpperCase() + moodOption.slice(1)}
@@ -147,7 +164,7 @@ const MoodColorizer: React.FC = () => {
           ))}
         </Select>
         <Box
-          bg={moodColors[mood]}
+          bg={moodColors[config.mood]}
           p={4}
           borderRadius="md"
           minHeight="100px"
@@ -156,12 +173,19 @@ const MoodColorizer: React.FC = () => {
           justifyContent="center"
         >
           <Text textAlign="center" fontWeight="bold">
-            {phrase}
+            {config.phrase}
           </Text>
         </Box>
         <Button onClick={generateNewPhrase}>New Phrase</Button>
       </VStack>
-    </WidgetBase>
+    </Box>
   );
 };
+
+const MoodColorizer = withWidgetBase<MoodColorizerConfig>({
+  renderWidget: (props) => <MoodColorizerContent {...props} />,
+  renderOptions: () => null,
+  defaultConfig,
+});
+
 export default MoodColorizer;

@@ -1,5 +1,11 @@
 import React from "react";
-import { Box, IconButton, useMediaQuery, Fade } from "@chakra-ui/react";
+import {
+  Box,
+  IconButton,
+  useMediaQuery,
+  Fade,
+  useColorModeValue,
+} from "@chakra-ui/react";
 import { EditIcon, CloseIcon } from "@chakra-ui/icons";
 import { useLocalStorage } from "../lib/useLocalStorage";
 
@@ -9,13 +15,23 @@ interface WidgetProps {
   widgetId: string;
 }
 
-const WidgetBase: React.FC<WidgetProps> = ({ children, settings, widgetId }) => {
-  const [isEditMode, setIsEditMode] = useLocalStorage(`widget_edit_mode_${widgetId}`, false, "widget");
+const WidgetBase: React.FC<WidgetProps> = ({
+  children,
+  settings,
+  widgetId,
+  ...rest
+}) => {
+  const [isEditMode, setIsEditMode] = useLocalStorage(
+    `widget_edit_mode_${widgetId}`,
+    false,
+    "widget"
+  );
   const [isMobile] = useMediaQuery("(max-width: 768px)");
   const [isHovered, setIsHovered] = React.useState(false);
-
+  console.log(rest.bg);
   const toggleEditMode = () => setIsEditMode(!isEditMode);
-
+  const bgColor = useColorModeValue("white", "gray.700");
+  const borderColor = useColorModeValue("gray.200", "gray.600");
   return (
     <Box
       borderWidth="1px"
@@ -24,14 +40,14 @@ const WidgetBase: React.FC<WidgetProps> = ({ children, settings, widgetId }) => 
       width="100%"
       height="100%"
       position="relative"
+      bg={bgColor}
+      borderColor={borderColor}
       zIndex={1}
-      
-      borderColor="gray.200"
-      boxShadow="md"
       transition="box-shadow 0.2s"
       _hover={{ boxShadow: "lg" }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      {...rest}
     >
       {children}
       <Fade in={isEditMode && settings !== undefined}>
@@ -42,7 +58,8 @@ const WidgetBase: React.FC<WidgetProps> = ({ children, settings, widgetId }) => 
             left={0}
             right={0}
             bottom={0}
-            bg="gray.800"
+            bg={bgColor}
+            borderColor={borderColor}
             zIndex={3}
             overflow="auto"
             p={4}
@@ -58,7 +75,6 @@ const WidgetBase: React.FC<WidgetProps> = ({ children, settings, widgetId }) => 
           aria-label={isEditMode ? "Close settings" : "Edit widget"}
           onClick={toggleEditMode}
           position="absolute"
-    
           right={2}
           bottom={2}
           size="sm"

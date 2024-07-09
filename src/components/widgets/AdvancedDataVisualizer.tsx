@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   VStack,
@@ -27,7 +27,8 @@ import {
   Legend,
 } from "chart.js";
 import Papa from "papaparse";
-import WidgetBase from "../WidgetBase";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
 
 ChartJS.register(
   CategoryScale,
@@ -43,20 +44,68 @@ interface DataItem {
   [key: string]: string | number;
 }
 
-const AdvancedDataVisualizer: React.FC = () => {
-  const [data, setData] = useState<DataItem[]>([]);
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [filteredData, setFilteredData] = useState<DataItem[]>([]);
-  const [sortColumn, setSortColumn] = useState("");
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
-  const [filterColumn, setFilterColumn] = useState("");
-  const [filterValue, setFilterValue] = useState("");
-  const [chartColumn, setChartColumn] = useState("");
+interface AdvancedDataVisualizerConfig {
+  data: DataItem[];
+  headers: string[];
+  filteredData: DataItem[];
+  sortColumn: string;
+  sortDirection: "asc" | "desc";
+  filterColumn: string;
+  filterValue: string;
+  chartColumn: string;
+}
+
+const defaultConfig: AdvancedDataVisualizerConfig = {
+  data: [],
+  headers: [],
+  filteredData: [],
+  sortColumn: "",
+  sortDirection: "asc",
+  filterColumn: "",
+  filterValue: "",
+  chartColumn: "",
+};
+
+const AdvancedDataVisualizerContent: React.FC<
+  WidgetProps<AdvancedDataVisualizerConfig>
+> = ({ config: rawConfig, onConfigChange }) => {
+  const config = { ...defaultConfig, ...rawConfig };
   const toast = useToast();
+
+  const applyFilterAndSort = useCallback(() => {
+    let result = [...config.data];
+
+    if (config.filterColumn && config.filterValue) {
+      result = result.filter((item) =>
+        String(item[config.filterColumn])
+          .toLowerCase()
+          .includes(config.filterValue.toLowerCase())
+      );
+    }
+
+    if (config.sortColumn) {
+      result.sort((a, b) => {
+        if (a[config.sortColumn] < b[config.sortColumn])
+          return config.sortDirection === "asc" ? -1 : 1;
+        if (a[config.sortColumn] > b[config.sortColumn])
+          return config.sortDirection === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    onConfigChange({ ...config, filteredData: result });
+  }, [config, onConfigChange]);
 
   useEffect(() => {
     applyFilterAndSort();
-  }, [data, sortColumn, sortDirection, filterColumn, filterValue]);
+  }, [
+    config.data,
+    config.sortColumn,
+    config.sortDirection,
+    config.filterColumn,
+    config.filterValue,
+    applyFilterAndSort,
+  ]);
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -65,8 +114,13 @@ const AdvancedDataVisualizer: React.FC = () => {
         complete: (results) => {
           const parsedData = results.data as DataItem[];
           if (parsedData.length > 0) {
-            setHeaders(Object.keys(parsedData[0]));
-            setData(parsedData);
+            const newHeaders = Object.keys(parsedData[0]);
+            onConfigChange({
+              ...config,
+              data: parsedData,
+              headers: newHeaders,
+              filteredData: parsedData,
+            });
             toast({
               title: "Dati caricati con successo",
               status: "success",
@@ -82,64 +136,52 @@ const AdvancedDataVisualizer: React.FC = () => {
     }
   };
 
-  const applyFilterAndSort = () => {
-    let result = [...data];
-
-    if (filterColumn && filterValue) {
-      result = result.filter((item) =>
-        String(item[filterColumn])
-          .toLowerCase()
-          .includes(filterValue.toLowerCase())
-      );
-    }
-
-    if (sortColumn) {
-      result.sort((a, b) => {
-        if (a[sortColumn] < b[sortColumn])
-          return sortDirection === "asc" ? -1 : 1;
-        if (a[sortColumn] > b[sortColumn])
-          return sortDirection === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    setFilteredData(result);
-  };
-
   const toggleSort = (column: string) => {
-    if (column === sortColumn) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+    if (column === config.sortColumn) {
+      onConfigChange({
+        ...config,
+        sortDirection: config.sortDirection === "asc" ? "desc" : "asc",
+      });
     } else {
-      setSortColumn(column);
-      setSortDirection("asc");
+      onConfigChange({
+        ...config,
+        sortColumn: column,
+        sortDirection: "asc",
+      });
     }
   };
 
   const chartData = {
-    labels: filteredData.map((item) => String(item[headers[0]])),
+    labels: config.filteredData.map((item) => String(item[config.headers[0]])),
     datasets: [
       {
-        label: chartColumn,
-        data: filteredData.map((item) => Number(item[chartColumn])),
+        label: config.chartColumn,
+        data: config.filteredData.map((item) =>
+          Number(item[config.chartColumn])
+        ),
         borderColor: "rgb(75, 192, 192)",
         tension: 0.1,
       },
     ],
   };
+
   const bgColor = useColorModeValue("white", "gray.700");
   const borderColor = useColorModeValue("gray.200", "gray.600");
+
   return (
-    <WidgetBase>
+    <Box p={4}>
       <VStack spacing={4} align="stretch">
         <Input type="file" onChange={handleFileUpload} accept=".csv" />
 
         <HStack>
           <Select
-            value={filterColumn}
-            onChange={(e) => setFilterColumn(e.target.value)}
+            value={config.filterColumn}
+            onChange={(e) =>
+              onConfigChange({ ...config, filterColumn: e.target.value })
+            }
           >
             <option value="">Seleziona colonna per filtrare</option>
-            {headers.map((header) => (
+            {config.headers.map((header) => (
               <option key={header} value={header}>
                 {header}
               </option>
@@ -147,18 +189,22 @@ const AdvancedDataVisualizer: React.FC = () => {
           </Select>
           <Input
             placeholder="Valore filtro"
-            value={filterValue}
-            onChange={(e) => setFilterValue(e.target.value)}
+            value={config.filterValue}
+            onChange={(e) =>
+              onConfigChange({ ...config, filterValue: e.target.value })
+            }
           />
         </HStack>
 
         <Select
-          value={chartColumn}
-          onChange={(e) => setChartColumn(e.target.value)}
+          value={config.chartColumn}
+          onChange={(e) =>
+            onConfigChange({ ...config, chartColumn: e.target.value })
+          }
         >
           <option value="">Seleziona colonna per il grafico</option>
-          {headers
-            .filter((header) => typeof data[0]?.[header] === "number")
+          {config.headers
+            .filter((header) => typeof config.data[0]?.[header] === "number")
             .map((header) => (
               <option key={header} value={header}>
                 {header}
@@ -166,7 +212,7 @@ const AdvancedDataVisualizer: React.FC = () => {
             ))}
         </Select>
 
-        {chartColumn && (
+        {config.chartColumn && (
           <Box height="300px">
             <Chart type="line" data={chartData} />
           </Box>
@@ -176,22 +222,22 @@ const AdvancedDataVisualizer: React.FC = () => {
           <Table variant="simple">
             <Thead>
               <Tr>
-                {headers.map((header) => (
+                {config.headers.map((header) => (
                   <Th
                     key={header}
                     onClick={() => toggleSort(header)}
                     cursor="pointer"
                   >
                     {header}
-                    {sortColumn === header &&
-                      (sortDirection === "asc" ? " ▲" : " ▼")}
+                    {config.sortColumn === header &&
+                      (config.sortDirection === "asc" ? " ▲" : " ▼")}
                   </Th>
                 ))}
               </Tr>
             </Thead>
             <Tbody>
               <AnimatePresence>
-                {filteredData.map((item, index) => (
+                {config.filteredData.map((item, index) => (
                   <motion.tr
                     key={index}
                     initial={{ opacity: 0 }}
@@ -199,7 +245,7 @@ const AdvancedDataVisualizer: React.FC = () => {
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.2 }}
                   >
-                    {headers.map((header) => (
+                    {config.headers.map((header) => (
                       <Td key={header}>{String(item[header])}</Td>
                     ))}
                   </motion.tr>
@@ -209,8 +255,14 @@ const AdvancedDataVisualizer: React.FC = () => {
           </Table>
         </Box>
       </VStack>
-    </WidgetBase>
+    </Box>
   );
 };
+
+const AdvancedDataVisualizer = withWidgetBase<AdvancedDataVisualizerConfig>({
+  renderWidget: (props) => <AdvancedDataVisualizerContent {...props} />,
+  renderOptions: () => null,
+  defaultConfig,
+});
 
 export default AdvancedDataVisualizer;

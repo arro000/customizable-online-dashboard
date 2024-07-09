@@ -1,43 +1,55 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { Chess } from "chess.js";
 import { Chessboard } from "react-chessboard";
-import { Box, Button, VStack, HStack, Text, useToast } from "@chakra-ui/react";
-import WidgetBase from "../WidgetBase";
-import { useLocalStorage } from "../../lib/useLocalStorage";
-
-interface ChessWidgetProps {
-  id: string;
-  editMode: boolean;
-}
+import {
+  Box,
+  Button,
+  VStack,
+  HStack,
+  Text,
+  useToast,
+  Select,
+} from "@chakra-ui/react";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
 
 interface ChessConfig {
   fen: string;
+  gameMode: "pvp" | "pvc";
+  difficulty: "easy" | "medium" | "hard";
 }
 
 const INITIAL_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-const ChessWidget: React.FC<ChessWidgetProps> = ({ id, editMode }) => {
-  const [config, setConfig] = useLocalStorage<ChessConfig>(
-    `chessWidget_${id}`,
-    {
-      fen: INITIAL_FEN,
-    }
-  );
-  const [game, setGame] = useState<Chess>(new Chess());
+const defaultConfig: ChessConfig = {
+  fen: INITIAL_FEN,
+  gameMode: "pvp",
+  difficulty: "medium",
+};
+
+const ChessContent: React.FC<WidgetProps<ChessConfig>> = ({
+  config,
+  onConfigChange,
+}) => {
+  const [game, setGame] = useState<Chess>(new Chess(config.fen));
+  const [fen, setFen] = useState(config.fen);
   const toast = useToast();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const newGame = new Chess();
     try {
       newGame.load(config.fen);
       setGame(newGame);
+      setFen(config.fen);
     } catch (error) {
       console.error("Invalid FEN, resetting to initial position", error);
-      newGame.load(INITIAL_FEN);
+      newGame.reset();
       setGame(newGame);
-      setConfig({ fen: INITIAL_FEN });
+      setFen(newGame.fen());
+      onConfigChange({ ...config, fen: newGame.fen() });
     }
-  }, [config.fen, setConfig]);
+  }, [config.fen, onConfigChange]);
 
   const makeAMove = useCallback(
     (move: any) => {
@@ -46,7 +58,8 @@ const ChessWidget: React.FC<ChessWidgetProps> = ({ id, editMode }) => {
         const result = gameCopy.move(move);
         if (result) {
           setGame(gameCopy);
-          setConfig({ fen: gameCopy.fen() });
+          setFen(gameCopy.fen());
+          onConfigChange({ ...config, fen: gameCopy.fen() });
           return true;
         }
       } catch (error) {
@@ -54,8 +67,33 @@ const ChessWidget: React.FC<ChessWidgetProps> = ({ id, editMode }) => {
       }
       return false;
     },
-    [game, setConfig]
+    [game, config, onConfigChange]
   );
+
+  const computerMove = useCallback(() => {
+    const gameCopy = new Chess(game.fen());
+    const moves = gameCopy.moves();
+
+    if (moves.length > 0) {
+      let move;
+      switch (config.difficulty) {
+        case "easy":
+          move = moves[Math.floor(Math.random() * moves.length)];
+          break;
+        case "medium":
+          // Implementa una logica più avanzata per la difficoltà media
+          move = moves[Math.floor(Math.random() * moves.length)];
+          break;
+        case "hard":
+          // Implementa una logica ancora più avanzata per la difficoltà difficile
+          move = moves[Math.floor(Math.random() * moves.length)];
+          break;
+        default:
+          move = moves[Math.floor(Math.random() * moves.length)];
+      }
+      makeAMove(move);
+    }
+  }, [game, config.difficulty, makeAMove]);
 
   const onDrop = useCallback(
     (sourceSquare: string, targetSquare: string) => {
@@ -81,43 +119,19 @@ const ChessWidget: React.FC<ChessWidgetProps> = ({ id, editMode }) => {
           duration: 3000,
           isClosable: true,
         });
+      } else if (config.gameMode === "pvc") {
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+        timeoutRef.current = setTimeout(computerMove, 300);
       }
 
       return true;
     },
-    [game, makeAMove, toast]
+    [game, makeAMove, toast, config.gameMode, computerMove]
   );
 
-  const resetBoard = () => {
-    const newGame = new Chess();
-    setGame(newGame);
-    setConfig({ fen: newGame.fen() });
-  };
-
-  const undoMove = () => {
-    const gameCopy = new Chess(game.fen());
-    gameCopy.undo();
-    setGame(gameCopy);
-    setConfig({ fen: gameCopy.fen() });
-  };
-
-  const renderSettings = () => (
-    <VStack spacing={4} align="stretch">
-      <Text fontWeight="bold">Impostazioni Scacchi</Text>
-      <Button onClick={resetBoard} colorScheme="blue">
-        Resetta la scacchiera
-      </Button>
-      <Button
-        onClick={undoMove}
-        colorScheme="yellow"
-        isDisabled={game.history().length === 0}
-      >
-        Annulla ultima mossa
-      </Button>
-    </VStack>
-  );
-
-  const renderContent = () => (
+  return (
     <Box
       width="100%"
       height="100%"
@@ -125,12 +139,10 @@ const ChessWidget: React.FC<ChessWidgetProps> = ({ id, editMode }) => {
       flexDirection="column"
       justifyContent="center"
       alignItems="center"
+      p={4}
+      position="absolute"
     >
-      <Chessboard
-        position={game.fen()}
-        onPieceDrop={onDrop}
-        boardWidth={Math.min(400, window.innerWidth - 40)}
-      />
+      <Chessboard />
       <VStack mt={4} spacing={2}>
         <Text>Turno: {game.turn() === "w" ? "Bianco" : "Nero"}</Text>
         <Text>Mosse: {Math.floor(game.moveNumber() / 2)}</Text>
@@ -138,12 +150,71 @@ const ChessWidget: React.FC<ChessWidgetProps> = ({ id, editMode }) => {
       </VStack>
     </Box>
   );
+};
+
+const ChessOptions: React.FC<WidgetProps<ChessConfig>> = ({
+  config,
+  onConfigChange,
+}) => {
+  const resetBoard = () => {
+    const newGame = new Chess();
+    onConfigChange({ ...config, fen: newGame.fen() });
+  };
+
+  const undoMove = () => {
+    const gameCopy = new Chess(config.fen);
+    gameCopy.undo();
+    onConfigChange({ ...config, fen: gameCopy.fen() });
+  };
 
   return (
-    <WidgetBase editMode={editMode} settings={renderSettings()}>
-      {renderContent()}
-    </WidgetBase>
+    <VStack spacing={4} align="stretch" p={4}>
+      <Text fontWeight="bold">Impostazioni Scacchi</Text>
+      <Select
+        value={config.gameMode}
+        onChange={(e) =>
+          onConfigChange({
+            ...config,
+            gameMode: e.target.value as "pvp" | "pvc",
+          })
+        }
+      >
+        <option value="pvp">Giocatore vs Giocatore</option>
+        <option value="pvc">Giocatore vs Computer</option>
+      </Select>
+      {config.gameMode === "pvc" && (
+        <Select
+          value={config.difficulty}
+          onChange={(e) =>
+            onConfigChange({
+              ...config,
+              difficulty: e.target.value as "easy" | "medium" | "hard",
+            })
+          }
+        >
+          <option value="easy">Facile</option>
+          <option value="medium">Medio</option>
+          <option value="hard">Difficile</option>
+        </Select>
+      )}
+      <Button onClick={resetBoard} colorScheme="blue">
+        Resetta la scacchiera
+      </Button>
+      <Button
+        onClick={undoMove}
+        colorScheme="yellow"
+        isDisabled={new Chess(config.fen).history().length === 0}
+      >
+        Annulla ultima mossa
+      </Button>
+    </VStack>
   );
 };
+
+const ChessWidget = withWidgetBase<ChessConfig>({
+  renderWidget: (props) => <ChessContent {...props} />,
+  renderOptions: (props) => <ChessOptions {...props} />,
+  defaultConfig,
+});
 
 export default ChessWidget;

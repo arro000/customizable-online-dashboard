@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   VStack,
@@ -11,7 +11,6 @@ import {
 } from "@chakra-ui/react";
 import withWidgetBase from "../hooks/withWidgetBase";
 import { WidgetProps } from "../../interfaces/widget";
-import { useWidgetConfig } from "../../hooks/useWidgetConfig";
 
 interface IframeConfig {
   url: string;
@@ -29,8 +28,11 @@ const defaultConfig: IframeConfig = {
   sandbox: ["allow-scripts", "allow-same-origin"],
 };
 
-const IframeContent: React.FC<WidgetProps<IframeConfig>> = (props) => {
-  const [config] = useWidgetConfig(props);
+const IframeContent: React.FC<WidgetProps<IframeConfig>> = ({
+  config: rawConfig,
+}) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const config = rawConfig ?? defaultConfig;
 
   return (
     <Box
@@ -43,6 +45,7 @@ const IframeContent: React.FC<WidgetProps<IframeConfig>> = (props) => {
     >
       <iframe
         src={config.url}
+        title="Embedded content from external website"
         allowFullScreen={config.allowFullscreen}
         loading={config.loading}
         sandbox={config.sandbox?.join(" ")}
@@ -55,16 +58,35 @@ const IframeContent: React.FC<WidgetProps<IframeConfig>> = (props) => {
           height: "100%",
         }}
         {...(config.allowPaymentRequest ? { allowPaymentRequest: true } : {})}
+        onLoad={() => setIsLoading(false)}
       />
+      {isLoading && (
+        <Box
+          position="absolute"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          bg="gray.100"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+        >
+          <Text>Loading...</Text>
+        </Box>
+      )}
     </Box>
   );
 };
 
-const IframeOptions: React.FC<WidgetProps<IframeConfig>> = (props) => {
-  const [config, updateConfig] = useWidgetConfig(props);
+const IframeOptions: React.FC<WidgetProps<IframeConfig>> = ({
+  config: rawConfig,
+  onConfigChange,
+}) => {
+  const config = rawConfig ?? defaultConfig;
 
   const toggleSandboxOption = (option: string) => {
-    updateConfig({
+    onConfigChange({
       sandbox: config.sandbox.includes(option)
         ? config.sandbox.filter((item) => item !== option)
         : [...config.sandbox, option],
@@ -76,12 +98,14 @@ const IframeOptions: React.FC<WidgetProps<IframeConfig>> = (props) => {
       <Input
         placeholder="URL dell'iframe"
         value={config.url}
-        onChange={(e) => updateConfig({ url: e.target.value })}
+        onChange={(e) => onConfigChange({ url: e.target.value })}
       />
       <HStack>
         <Switch
           isChecked={config.allowFullscreen}
-          onChange={(e) => updateConfig({ allowFullscreen: e.target.checked })}
+          onChange={(e) =>
+            onConfigChange({ allowFullscreen: e.target.checked })
+          }
         />
         <Text>Permetti Fullscreen</Text>
       </HStack>
@@ -89,7 +113,7 @@ const IframeOptions: React.FC<WidgetProps<IframeConfig>> = (props) => {
         <Switch
           isChecked={config.allowPaymentRequest}
           onChange={(e) =>
-            updateConfig({ allowPaymentRequest: e.target.checked })
+            onConfigChange({ allowPaymentRequest: e.target.checked })
           }
         />
         <Text>Permetti Richieste di Pagamento</Text>
@@ -99,14 +123,14 @@ const IframeOptions: React.FC<WidgetProps<IframeConfig>> = (props) => {
         <Button
           size="sm"
           colorScheme={config.loading === "eager" ? "blue" : "gray"}
-          onClick={() => updateConfig({ loading: "eager" })}
+          onClick={() => onConfigChange({ loading: "eager" })}
         >
           Eager
         </Button>
         <Button
           size="sm"
           colorScheme={config.loading === "lazy" ? "blue" : "gray"}
-          onClick={() => updateConfig({ loading: "lazy" })}
+          onClick={() => onConfigChange({ loading: "lazy" })}
         >
           Lazy
         </Button>
@@ -129,9 +153,20 @@ const IframeOptions: React.FC<WidgetProps<IframeConfig>> = (props) => {
           </Button>
         ))}
       </HStack>
-      <Button onClick={() => updateConfig(defaultConfig)} colorScheme="red">
+      {config.sandbox.length === 0 && (
+        <Text color="red.500">
+          Warning: No sandbox options selected. This may be a security risk.
+        </Text>
+      )}
+      <Button onClick={() => onConfigChange(defaultConfig)} colorScheme="red">
         Reimposta Configurazione
       </Button>
+      <Button size="sm" onClick={() => window.open(config.url, "_blank")}>
+        Open in New Tab
+      </Button>
+      <Text fontSize="sm" color="gray.500" mt={2}>
+        Note: The default URL (example.com) is for illustrative purposes only.
+      </Text>
     </VStack>
   );
 };

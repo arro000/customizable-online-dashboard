@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   Box,
   VStack,
@@ -11,23 +11,46 @@ import {
   SliderThumb,
   HStack,
   useColorModeValue,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
 } from "@chakra-ui/react";
-import WidgetBase from "../WidgetBase";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
 
 interface Note {
   frequency: number;
   duration: number;
 }
 
-const MoodMusicMixer: React.FC = () => {
-  const [text, setText] = useState("");
-  const [mood, setMood] = useState(0);
-  const [melody, setMelody] = useState<Note[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [tempo, setTempo] = useState(120);
+interface MoodMusicMixerConfig {
+  text: string;
+  mood: number | null;
+  melody: Note[];
+  isPlaying: boolean;
+  tempo: number;
+  maxMelodyLength: number;
+}
+
+const defaultConfig: MoodMusicMixerConfig = {
+  text: "",
+  mood: null,
+  melody: [],
+  isPlaying: false,
+  tempo: 120,
+  maxMelodyLength: 8,
+};
+
+const MoodMusicMixerContent: React.FC<WidgetProps<MoodMusicMixerConfig>> = ({
+  config: rawConfig,
+  onConfigChange,
+}) => {
+  // Inizializza config con valori di default se non è definito
+  const config: MoodMusicMixerConfig = rawConfig ?? defaultConfig;
 
   const audioContext = useRef<AudioContext | null>(null);
-  const bgColor = useColorModeValue("gray.100", "gray.700");
   const textColor = useColorModeValue("gray.800", "gray.100");
 
   useEffect(() => {
@@ -40,8 +63,7 @@ const MoodMusicMixer: React.FC = () => {
     };
   }, []);
 
-  const analyzeMood = () => {
-    // Semplice analisi del sentiment basata sulle parole chiave
+  const analyzeMood = useCallback(() => {
     const happyWords = [
       "felice",
       "gioioso",
@@ -57,40 +79,37 @@ const MoodMusicMixer: React.FC = () => {
       "sconfortato",
     ];
 
-    const words = text.toLowerCase().split(/\s+/);
+    const words = config.text.toLowerCase().split(/\s+/);
     const happyScore = words.filter((word) => happyWords.includes(word)).length;
     const sadScore = words.filter((word) => sadWords.includes(word)).length;
 
-    const newMood = (happyScore - sadScore) / words.length;
-    setMood(newMood);
-    generateMelody(newMood);
-  };
+    const newMood =
+      words.length > 0 ? (happyScore - sadScore) / words.length : 0;
+    const newMelody = generateMelody(newMood, config.maxMelodyLength);
+    onConfigChange({ mood: newMood, melody: newMelody });
+  }, [config.text, config.maxMelodyLength, onConfigChange]);
 
-  const generateMelody = (moodScore: number) => {
+  const generateMelody = (moodScore: number, length: number): Note[] => {
     const baseFrequency = 261.63; // C4
     const scale =
-      moodScore > 0
-        ? [0, 2, 4, 5, 7, 9, 11] // Major scale
-        : [0, 2, 3, 5, 7, 8, 10]; // Minor scale
+      moodScore > 0 ? [0, 2, 4, 5, 7, 9, 11] : [0, 2, 3, 5, 7, 8, 10];
 
-    const newMelody: Note[] = [];
-    for (let i = 0; i < 8; i++) {
+    return Array.from({ length }, () => {
       const scaleIndex = Math.floor(Math.random() * scale.length);
       const octave = Math.floor(Math.random() * 2);
       const frequency =
         baseFrequency * Math.pow(2, (scale[scaleIndex] + octave * 12) / 12);
       const duration = Math.random() * 0.3 + 0.1;
-      newMelody.push({ frequency, duration });
-    }
-    setMelody(newMelody);
+      return { frequency, duration };
+    });
   };
 
-  const playMelody = () => {
+  const playMelody = useCallback(() => {
     if (!audioContext.current) return;
-    setIsPlaying(true);
+    onConfigChange({ isPlaying: true });
 
     let startTime = audioContext.current.currentTime;
-    melody.forEach((note) => {
+    config.melody?.forEach((note) => {
       const oscillator = audioContext.current!.createOscillator();
       const gainNode = audioContext.current!.createGain();
 
@@ -112,18 +131,18 @@ const MoodMusicMixer: React.FC = () => {
       startTime += note.duration;
     });
 
-    setTimeout(() => setIsPlaying(false), startTime * 1000);
-  };
+    setTimeout(() => onConfigChange({ isPlaying: false }), startTime * 1000);
+  }, [config.melody, onConfigChange]);
 
   return (
-    <WidgetBase>
+    <Box p={4}>
       <VStack spacing={4} align="stretch">
         <Text fontSize="2xl" fontWeight="bold" color={textColor}>
           Mood Music Mixer
         </Text>
         <Textarea
-          value={text}
-          onChange={(e) => setText(e.target.value)}
+          value={config.text}
+          onChange={(e) => onConfigChange({ text: e.target.value })}
           placeholder="Scrivi qualcosa sul tuo umore..."
           resize="vertical"
           minHeight="100px"
@@ -131,29 +150,79 @@ const MoodMusicMixer: React.FC = () => {
         <Button onClick={analyzeMood} colorScheme="blue">
           Analizza Umore e Genera Melodia
         </Button>
-        <Text color={textColor}>
-          Umore rilevato: {mood.toFixed(2)} (
-          {mood > 0 ? "Positivo" : "Negativo"})
+        {config.mood && (
+          <Text color={textColor}>
+            Umore rilevato: {config.mood.toFixed(2)} (
+            {config.mood > 0 ? "Positivo" : "Negativo"})
+          </Text>
+        )}
+        <Button
+          onClick={playMelody}
+          isDisabled={config.melody?.length === 0 || config.isPlaying}
+          colorScheme="green"
+        >
+          {config.isPlaying ? "Riproduzione in corso..." : "Riproduci Melodia"}
+        </Button>
+      </VStack>
+    </Box>
+  );
+};
+
+const MoodMusicMixerOptions: React.FC<WidgetProps<MoodMusicMixerConfig>> = ({
+  config: rawConfig,
+  onConfigChange,
+}) => {
+  // Inizializza config con valori di default se non è definito
+  const config: MoodMusicMixerConfig = rawConfig ?? defaultConfig;
+
+  const textColor = useColorModeValue("gray.800", "gray.100");
+
+  return (
+    <Box p={4}>
+      <VStack spacing={4} align="stretch">
+        <Text fontSize="xl" fontWeight="bold" color={textColor}>
+          Opzioni Mood Music Mixer
         </Text>
         <HStack>
-          <Text color={textColor}>Tempo: {tempo} BPM</Text>
-          <Slider value={tempo} min={60} max={180} step={1} onChange={setTempo}>
+          <Text color={textColor}>Tempo: {config.tempo} BPM</Text>
+          <Slider
+            value={config.tempo}
+            min={60}
+            max={180}
+            step={1}
+            onChange={(value) => onConfigChange({ tempo: value })}
+          >
             <SliderTrack>
               <SliderFilledTrack />
             </SliderTrack>
             <SliderThumb />
           </Slider>
         </HStack>
-        <Button
-          onClick={playMelody}
-          isDisabled={melody.length === 0 || isPlaying}
-          colorScheme="green"
-        >
-          {isPlaying ? "Riproduzione in corso..." : "Riproduci Melodia"}
-        </Button>
+        <HStack>
+          <Text color={textColor}>Lunghezza massima melodia:</Text>
+          <NumberInput
+            value={config.maxMelodyLength}
+            min={4}
+            max={16}
+            step={1}
+            onChange={(_, value) => onConfigChange({ maxMelodyLength: value })}
+          >
+            <NumberInputField />
+            <NumberInputStepper>
+              <NumberIncrementStepper />
+              <NumberDecrementStepper />
+            </NumberInputStepper>
+          </NumberInput>
+        </HStack>
       </VStack>
-    </WidgetBase>
+    </Box>
   );
 };
+
+const MoodMusicMixer = withWidgetBase<MoodMusicMixerConfig>({
+  renderWidget: (props) => <MoodMusicMixerContent {...props} />,
+  renderOptions: (props) => <MoodMusicMixerOptions {...props} />,
+  defaultConfig,
+});
 
 export default MoodMusicMixer;
