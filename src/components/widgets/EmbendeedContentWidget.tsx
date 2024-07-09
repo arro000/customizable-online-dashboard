@@ -70,7 +70,7 @@ const EmbeddedContentWidgetContent: React.FC<
   const paddingTop = `${(aspectHeight / aspectWidth) * 100}%`;
 
   return (
-    <Box p={4} height="100%" width="100%">
+    <Box>
       <Box position="relative" paddingTop={paddingTop}>
         <Box position="absolute" top="0" left="0" right="0" bottom="0">
           <div
