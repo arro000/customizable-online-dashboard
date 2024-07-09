@@ -21,7 +21,7 @@ const buttonVariants: Variants = {
   editMode: {
     scale: 1.2,
     rotate: 360,
-    boxShadow: "0px 0px 20px rgba(255, 105, 180, 0.6)",
+    boxShadow: "0px 0px 20px rgba(255, 255, 255, 0.6)",
   },
 };
 
@@ -38,7 +38,7 @@ export const EditModeToggleButton: React.FC<EditModeToggleButtonProps> = ({
 
   return (
     <MotionIconButton
-      position="absolute"
+      position="fixed"
       height="60px"
       width="60px"
       bottom="10"
@@ -48,12 +48,14 @@ export const EditModeToggleButton: React.FC<EditModeToggleButtonProps> = ({
       onClick={() => setEditMode(!editMode)}
       aria-label="Modalità modifica"
       borderRadius="full"
-      bg={bgColor}
+     
       variants={buttonVariants}
       initial="idle"
-      animate={editMode ? "editMode" : "idle"}
+      
+      animate={editMode ? "editMode" : "idle"} bg={bgColor}
       whileHover="hover"
       whileTap={{ scale: 1.3 }}
+      zIndex={100}
       transition={{
         type: "spring",
         stiffness: 300,
