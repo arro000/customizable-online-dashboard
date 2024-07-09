@@ -278,6 +278,7 @@ const GifWidget = withWidgetBase<GifConfig>({
   renderWidget: (props) => <GifContent {...props} />,
   renderOptions: (props) => <GifOptions {...props} />,
   defaultConfig,
+  widgetStyleConfig: { bg: "#ffffff00", borderColor: "none" },
 });
 
 export default GifWidget;
