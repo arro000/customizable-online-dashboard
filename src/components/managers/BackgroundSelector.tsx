@@ -1,6 +1,17 @@
-// components/BackgroundSelector.tsx
 import React from "react";
-import { Select, Box, VStack } from "@chakra-ui/react";
+import {
+  Button,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  Box,
+  VStack,
+  Select,
+} from "@chakra-ui/react";
 import { useLocalStorage } from "../../lib/useLocalStorage";
 import * as Backgrounds from "../widgets/backgrounds";
 
@@ -19,6 +30,7 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
     "backgroundProps",
     {}
   );
+  const { isOpen, onOpen, onClose } = useDisclosure();
 
   const handleBackgroundChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedBackground(e.target.value);
@@ -31,23 +43,37 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
   return (
     <>
       {editMode && (
-        <VStack spacing={4} align="stretch" mb={4}>
-          <Select value={selectedBackground} onChange={handleBackgroundChange}>
-            {Object.keys(Backgrounds).map((bg) => (
-              <option key={bg} value={bg}>
-                {bg}
-              </option>
-            ))}
-          </Select>
-          {BackgroundOptions && (
-            <BackgroundOptions
-              props={backgroundProps}
-              setProps={setBackgroundProps}
-            />
-          )}
-        </VStack>
+        <Button onClick={onOpen} mb={4}>
+          {selectedBackground}
+        </Button>
       )}
-      <BackgroundComponent {...backgroundProps} />
+      <Modal isOpen={isOpen} onClose={onClose}>
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Background Settings</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <VStack spacing={4} align="stretch">
+              <Select value={selectedBackground} onChange={handleBackgroundChange}>
+                {Object.keys(Backgrounds).map((bg) => (
+                  <option key={bg} value={bg}>
+                    {bg}
+                  </option>
+                ))}
+              </Select>
+              {BackgroundOptions && (
+                <BackgroundOptions
+                  props={backgroundProps}
+                  setProps={setBackgroundProps}
+                />
+              )}
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+      <Box position="fixed" top={0} left={0} right={0} bottom={0} zIndex={-1}>
+        <BackgroundComponent {...backgroundProps} />
+      </Box>
     </>
   );
 };

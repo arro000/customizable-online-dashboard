@@ -9,6 +9,9 @@ import {
   Button,
   useToast,
   Spinner,
+  Textarea,
+  Switch,
+  HStack,
 } from "@chakra-ui/react";
 import WidgetBase from "../WidgetBase";
 import { useLocalStorage } from "../../lib/useLocalStorage";
@@ -25,6 +28,18 @@ const WebLink: React.FC<WebLinkProps> = ({ id, editMode }) => {
   const [description, setDescription] = useLocalStorage(
     `weblink_${id}_description`,
     ""
+  );
+  const [customTitle, setCustomTitle] = useLocalStorage(
+    `weblink_${id}_customTitle`,
+    ""
+  );
+  const [customDescription, setCustomDescription] = useLocalStorage(
+    `weblink_${id}_customDescription`,
+    ""
+  );
+  const [useCustom, setUseCustom] = useLocalStorage(
+    `weblink_${id}_useCustom`,
+    false
   );
   const [isLoading, setIsLoading] = useState(false);
   const toast = useToast();
@@ -137,6 +152,29 @@ const WebLink: React.FC<WebLinkProps> = ({ id, editMode }) => {
       >
         Refresh Site Info
       </Button>
+      <HStack>
+        <Switch
+          isChecked={useCustom}
+          onChange={(e) => setUseCustom(e.target.checked)}
+        />
+        <Text>Use custom title and description</Text>
+      </HStack>
+      {useCustom && (
+        <>
+          <Text>Custom Title:</Text>
+          <Input
+            value={customTitle}
+            onChange={(e) => setCustomTitle(e.target.value)}
+            placeholder="Custom title"
+          />
+          <Text>Custom Description:</Text>
+          <Textarea
+            value={customDescription}
+            onChange={(e) => setCustomDescription(e.target.value)}
+            placeholder="Custom description"
+          />
+        </>
+      )}
     </VStack>
   );
 
@@ -154,12 +192,14 @@ const WebLink: React.FC<WebLinkProps> = ({ id, editMode }) => {
               <Image src={favicon} alt="Site favicon" boxSize="32px" />
             )}
             <Text fontSize="lg" fontWeight="bold">
-              {title ||
-                (isValidUrl(url) ? new URL(url).hostname : "Invalid URL")}
+              {useCustom
+                ? customTitle || "Custom Title"
+                : title ||
+                  (isValidUrl(url) ? new URL(url).hostname : "Invalid URL")}
             </Text>
-            {description && (
+            {(useCustom ? customDescription : description) && (
               <Text fontSize="sm" color="gray.600" noOfLines={2}>
-                {description}
+                {useCustom ? customDescription : description}
               </Text>
             )}
             {isValidUrl(url) && (

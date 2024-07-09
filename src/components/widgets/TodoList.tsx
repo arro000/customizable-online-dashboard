@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   VStack,
   HStack,
@@ -15,14 +15,17 @@ import {
   Collapse,
   useDisclosure,
   Box,
+  Textarea,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
 } from "@chakra-ui/react";
-import {
-  DeleteIcon,
-  EditIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-} from "@chakra-ui/icons";
-import WidgetBase from "../WidgetBase";
+import { DeleteIcon, EditIcon, ChevronDownIcon, ChevronUpIcon } from "@chakra-ui/icons";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetProps } from "../../interfaces/widget";
+import { useWidgetConfig } from "../../hooks/useWidgetConfig";
 import { useLocalStorage } from "../../lib/useLocalStorage";
 
 interface Todo {
@@ -31,25 +34,33 @@ interface Todo {
   completed: boolean;
   priority: "low" | "medium" | "high";
   dueDate?: string;
+  notes?: string;
 }
 
-interface TodoListProps {
-  id: string;
-  editMode: boolean;
+interface TodoListConfig {
+  title: string;
+  showPriority: boolean;
+  showDueDate: boolean;
+  showNotes: boolean;
+  itemsPerPage: number;
 }
 
-const TodoList: React.FC<TodoListProps> = ({ id, editMode }) => {
-  const [todos, setTodos] = useLocalStorage<Todo[]>(`todoList_${id}_todos`, []);
+const defaultConfig: TodoListConfig = {
+  title: "Todo List",
+  showPriority: true,
+  showDueDate: true,
+  showNotes: false,
+  itemsPerPage: 10,
+};
+
+const TodoListContent: React.FC<WidgetProps<TodoListConfig>> = (props) => {
+  const [config] = useWidgetConfig(props);
+  const [todos, setTodos] = useLocalStorage<Todo[]>(`todoList_${props.id}_todos`, []);
   const [inputValue, setInputValue] = useState("");
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-  const [filter, setFilter] = useLocalStorage<"all" | "active" | "completed">(
-    `todoList_${id}_filter`,
-    "all"
-  );
-  const [sort, setSort] = useLocalStorage<"added" | "priority" | "dueDate">(
-    `todoList_${id}_sort`,
-    "added"
-  );
+  const [filter, setFilter] = useLocalStorage<"all" | "active" | "completed">(`todoList_${props.id}_filter`, "all");
+  const [sort, setSort] = useLocalStorage<"added" | "priority" | "dueDate">(`todoList_${props.id}_sort`, "added");
+  const [currentPage, setCurrentPage] = useState(1);
   const { isOpen, onToggle } = useDisclosure();
   const toast = useToast();
 
@@ -143,29 +154,47 @@ const TodoList: React.FC<TodoListProps> = ({ id, editMode }) => {
     [setTodos]
   );
 
-  const filteredAndSortedTodos = todos
-    .filter((todo) => {
-      if (filter === "active") return !todo.completed;
-      if (filter === "completed") return todo.completed;
-      return true;
-    })
-    .sort((a, b) => {
-      if (sort === "priority") {
-        const priorityOrder = { high: 3, medium: 2, low: 1 };
-        return priorityOrder[b.priority] - priorityOrder[a.priority];
-      }
-      if (sort === "dueDate") {
-        if (!a.dueDate) return 1;
-        if (!b.dueDate) return -1;
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      }
-      return b.id - a.id;
-    });
+  const handleChangeNotes = useCallback(
+    (id: number, notes: string) => {
+      setTodos((prevTodos) =>
+        prevTodos.map((todo) => (todo.id === id ? { ...todo, notes } : todo))
+      );
+    },
+    [setTodos]
+  );
 
-  const renderTodoList = () => (
-    <VStack spacing={4} align="stretch">
+  const filteredAndSortedTodos = useMemo(() => {
+    return todos
+      .filter((todo) => {
+        if (filter === "active") return !todo.completed;
+        if (filter === "completed") return todo.completed;
+        return true;
+      })
+      .sort((a, b) => {
+        if (sort === "priority") {
+          const priorityOrder = { high: 3, medium: 2, low: 1 };
+          return priorityOrder[b.priority] - priorityOrder[a.priority];
+        }
+        if (sort === "dueDate") {
+          if (!a.dueDate) return 1;
+          if (!b.dueDate) return -1;
+          return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+        }
+        return b.id - a.id;
+      });
+  }, [todos, filter, sort]);
+
+  const paginatedTodos = useMemo(() => {
+    const startIndex = (currentPage - 1) * config.itemsPerPage ?? 10;
+    return filteredAndSortedTodos.slice(startIndex, startIndex + config.itemsPerPage ??10);
+  }, [filteredAndSortedTodos, currentPage, config.itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredAndSortedTodos.length / config.itemsPerPage ??10);
+
+  return (
+    <VStack spacing={4} align="stretch" p={4}>
       <Text fontSize="xl" fontWeight="bold">
-        Todo List
+        {config.title}
       </Text>
       <HStack>
         <Input
@@ -197,7 +226,7 @@ const TodoList: React.FC<TodoListProps> = ({ id, editMode }) => {
         </Select>
       </HStack>
       <List spacing={2}>
-        {filteredAndSortedTodos.map((todo) => (
+        {paginatedTodos.map((todo) => (
           <ListItem key={todo.id}>
             <HStack justify="space-between">
               <Checkbox
@@ -209,18 +238,20 @@ const TodoList: React.FC<TodoListProps> = ({ id, editMode }) => {
                 </Text>
               </Checkbox>
               <HStack>
-                <Badge
-                  colorScheme={
-                    todo.priority === "high"
-                      ? "red"
-                      : todo.priority === "medium"
-                      ? "yellow"
-                      : "green"
-                  }
-                >
-                  {todo.priority}
-                </Badge>
-                {todo.dueDate && (
+                {config.showPriority && (
+                  <Badge
+                    colorScheme={
+                      todo.priority === "high"
+                        ? "red"
+                        : todo.priority === "medium"
+                        ? "yellow"
+                        : "green"
+                    }
+                  >
+                    {todo.priority}
+                  </Badge>
+                )}
+                {config.showDueDate && todo.dueDate && (
                   <Text fontSize="sm">
                     {new Date(todo.dueDate).toLocaleDateString()}
                   </Text>
@@ -241,53 +272,121 @@ const TodoList: React.FC<TodoListProps> = ({ id, editMode }) => {
             </HStack>
             <Collapse in={isOpen}>
               <Box mt={2}>
-                <Select
-                  value={todo.priority}
-                  onChange={(e) =>
-                    handleChangePriority(
-                      todo.id,
-                      e.target.value as Todo["priority"]
-                    )
-                  }
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </Select>
-                <Input
-                  type="date"
-                  value={todo.dueDate || ""}
-                  onChange={(e) => handleChangeDueDate(todo.id, e.target.value)}
-                />
+                {config.showPriority && (
+                  <Select
+                    value={todo.priority}
+                    onChange={(e) =>
+                      handleChangePriority(
+                        todo.id,
+                        e.target.value as Todo["priority"]
+                      )
+                    }
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </Select>
+                )}
+                {config.showDueDate && (
+                  <Input
+                    type="date"
+                    value={todo.dueDate || ""}
+                    onChange={(e) => handleChangeDueDate(todo.id, e.target.value)}
+                  />
+                )}
+                {config.showNotes && (
+                  <Textarea
+                    value={todo.notes || ""}
+                    onChange={(e) => handleChangeNotes(todo.id, e.target.value)}
+                    placeholder="Add notes..."
+                  />
+                )}
               </Box>
             </Collapse>
           </ListItem>
         ))}
       </List>
-      <Button
-        onClick={onToggle}
-        rightIcon={isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
-      >
-        {isOpen ? "Hide Details" : "Show Details"}
-      </Button>
+      <HStack justify="space-between">
+        <Button
+          onClick={onToggle}
+          rightIcon={isOpen ? <ChevronUpIcon /> : <ChevronDownIcon />}
+        >
+          {isOpen ? "Hide Details" : "Show Details"}
+        </Button>
+        <HStack>
+          <Button
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            isDisabled={currentPage === 1}
+          >
+            Previous
+          </Button>
+          <Text>{`Page ${currentPage} of ${totalPages}`}</Text>
+          <Button
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            isDisabled={currentPage === totalPages}
+          >
+            Next
+          </Button>
+        </HStack>
+      </HStack>
     </VStack>
   );
+};
 
-  const renderSettings = () => (
-    <VStack spacing={4} align="stretch">
+const TodoListOptions: React.FC<WidgetProps<TodoListConfig>> = (props) => {
+  const [config, updateConfig] = useWidgetConfig(props);
+
+  return (
+    <VStack spacing={4} align="stretch" p={4}>
       <Text fontSize="xl" fontWeight="bold">
         Todo List Settings
       </Text>
-      <Text>Configure your Todo List widget here.</Text>
-      {/* Add more settings options here if needed */}
+      <Input
+        value={config.title}
+        onChange={(e) => updateConfig({ title: e.target.value })}
+        placeholder="Widget Title"
+      />
+      <Checkbox
+        isChecked={config.showPriority}
+        onChange={(e) => updateConfig({ showPriority: e.target.checked })}
+      >
+        Show Priority
+      </Checkbox>
+      <Checkbox
+        isChecked={config.showDueDate}
+        onChange={(e) => updateConfig({ showDueDate: e.target.checked })}
+      >
+        Show Due Date
+      </Checkbox>
+      <Checkbox
+        isChecked={config.showNotes}
+        onChange={(e) => updateConfig({ showNotes: e.target.checked })}
+      >
+        Show Notes
+      </Checkbox>
+      <HStack>
+        <Text>Items per page:</Text>
+        <NumberInput
+          value={config.itemsPerPage}
+          onChange={(_, value) => updateConfig({ itemsPerPage: value })}
+          min={1}
+          max={50}
+        >
+          <NumberInputField />
+          <NumberInputStepper>
+            <NumberIncrementStepper />
+            <NumberDecrementStepper />
+          </NumberInputStepper>
+        </NumberInput>
+      </HStack>
     </VStack>
   );
-
-  return (
-    <WidgetBase editMode={editMode} settings={renderSettings()}>
-      {renderTodoList()}
-    </WidgetBase>
-  );
 };
+
+const TodoList = withWidgetBase<TodoListConfig>({
+  renderWidget: (props) => <TodoListContent {...props} />,
+  renderOptions: (props) => <TodoListOptions {...props} />,
+  defaultConfig,
+});
 
 export default TodoList;

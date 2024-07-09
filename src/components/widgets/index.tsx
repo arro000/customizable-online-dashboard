@@ -19,3 +19,7 @@ export { default as PostIt } from "./PostIt";
 export { default as WebLink } from "./WebLink";
 export { default as GifWidget } from "./GifWidget";
 export { default as ChessWidget } from "./ChessWidget";
+export { default as EmbeddedContentWidget} from "./EmbendeedContentWidget"
+
+
+
