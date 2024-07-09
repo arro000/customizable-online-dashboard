@@ -28,7 +28,6 @@ const WidgetBase: React.FC<WidgetProps> = ({
   );
   const [isMobile] = useMediaQuery("(max-width: 768px)");
   const [isHovered, setIsHovered] = React.useState(false);
-  console.log(rest.bg);
   const toggleEditMode = () => setIsEditMode(!isEditMode);
   const bgColor = useColorModeValue("white", "gray.700");
   const borderColor = useColorModeValue("gray.200", "gray.600");

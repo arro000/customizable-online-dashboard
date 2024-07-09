@@ -45,7 +45,7 @@ const App: React.FC = () => {
 
   return (
     <ChakraProvider>
-      <Box p={4}>
+      <Box h="100%">
         <Flex direction="row" justifyContent="flex-end" wrap="wrap" gap={5}>
           <BackgroundSelector editMode={editMode} />
 
@@ -58,7 +58,6 @@ const App: React.FC = () => {
               </Button>
             </>
           )}
-          <EditModeToggleButton editMode={editMode} setEditMode={setEditMode} />
         </Flex>
         <VStack align="stretch">
           <GridLayout
@@ -84,6 +83,7 @@ const App: React.FC = () => {
           />
         </VStack>
       </Box>
+      <EditModeToggleButton editMode={editMode} setEditMode={setEditMode} />
     </ChakraProvider>
   );
 };
