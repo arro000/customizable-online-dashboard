@@ -14,6 +14,7 @@ import {
 } from "@chakra-ui/icons";
 import { color } from "framer-motion";
 import { WidgetConfig } from "../../interfaces/widget";
+import { useLocalStorage } from "../../lib/useLocalStorage";
 
 interface GridLayoutProps {
   editMode: boolean;
@@ -36,6 +37,7 @@ const GridLayout: React.FC<GridLayoutProps> = ({
   const [draggableWidgets, setDraggableWidgets] = useState<{
     [key: string]: boolean;
   }>({});
+  const [width, setWidth] = useLocalStorage("gridWidth", window.innerWidth);
 
   const onLayoutChange = (newLayout: Layout[]): void => {
     setWidgets((prevWidgets) =>
@@ -86,8 +88,6 @@ const GridLayout: React.FC<GridLayoutProps> = ({
       )
     );
   };
-
-  const width = window.innerWidth;
 
   return (
     <Box position="relative">

@@ -31,12 +31,7 @@ const EmbeddedContentWidgetContent: React.FC<
   WidgetProps<EmbeddedContentWidgetConfig>
 > = ({ config, onConfigChange }) => {
   const [key, setKey] = useState(0);
-
-  useEffect(() => {
-    if (!config) {
-      onConfigChange(defaultConfig);
-    }
-  }, [config.refreshInterval]);
+  config = { ...defaultConfig, ...config };
 
   useEffect(() => {
     if (config.refreshInterval > 0) {

@@ -45,11 +45,15 @@ function withWidgetBase<T extends WidgetConfig>({
       <WidgetBase
         widgetId={id}
         {...widgetStyleConfig}
-        settings={renderOptions({
-          ...widgetProps,
-          config: widgetConfig,
-          onConfigChange: updateWidgetConfig,
-        })}
+        settings={
+          renderOptions
+            ? renderOptions({
+                ...widgetProps,
+                config: widgetConfig,
+                onConfigChange: updateWidgetConfig,
+              })
+            : null
+        }
       >
         {renderWidget({
           ...widgetProps,
