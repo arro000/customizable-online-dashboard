@@ -28,7 +28,6 @@ interface PostItConfig {
   color: string;
   textColor: string;
   rotation: number;
-  maxCharacters: number;
   history: string[];
 }
 
@@ -39,7 +38,6 @@ const defaultConfig: PostItConfig = {
   color: "#FFFF88",
   textColor: "#000000",
   rotation: 0,
-  maxCharacters: 200,
   history: [],
 };
 
@@ -52,19 +50,9 @@ const PostItContent: React.FC<WidgetProps<PostItConfig>> = ({
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       const newContent = e.target.value;
-      if (newContent.length <= config.maxCharacters) {
-        onConfigChange({ content: newContent });
-      } else {
-        toast({
-          title: "Character limit reached",
-          description: `Maximum ${config.maxCharacters} characters allowed`,
-          status: "warning",
-          duration: 3000,
-          isClosable: true,
-        });
-      }
+      onConfigChange({ content: newContent });
     },
-    [config.maxCharacters, onConfigChange, toast]
+    [onConfigChange]
   );
 
   const saveToHistory = useCallback(() => {
@@ -107,9 +95,6 @@ const PostItContent: React.FC<WidgetProps<PostItConfig>> = ({
           _focus={{ boxShadow: "none" }}
         />
         <HStack width="100%" justifyContent="space-between">
-          <Text fontSize="xs" color={config.textColor}>
-            {config.content.length}/{config.maxCharacters}
-          </Text>
           <Button size="xs" onClick={saveToHistory}>
             Save
           </Button>
@@ -181,20 +166,6 @@ const PostItOptions: React.FC<WidgetProps<PostItConfig>> = ({
           onChange={(_, value) => handleChange("rotation", value)}
           min={-45}
           max={45}
-        >
-          <NumberInputField />
-          <NumberInputStepper>
-            <NumberIncrementStepper />
-            <NumberDecrementStepper />
-          </NumberInputStepper>
-        </NumberInput>
-
-        <Text width="100px">Max Characters:</Text>
-        <NumberInput
-          value={config.maxCharacters}
-          onChange={(_, value) => handleChange("maxCharacters", value)}
-          min={50}
-          max={500}
         >
           <NumberInputField />
           <NumberInputStepper>
