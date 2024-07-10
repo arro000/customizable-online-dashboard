@@ -136,6 +136,7 @@ const ChessContent: React.FC<WidgetProps<ChessConfig>> = ({
       width="100%"
       height="100%"
       display="flex"
+      minHeight="500px"
       flexDirection="column"
       justifyContent="center"
       alignItems="center"
