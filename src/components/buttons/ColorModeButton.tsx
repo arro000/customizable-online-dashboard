@@ -9,6 +9,7 @@ const ColorModeButton: React.FC = () => {
 
   return (
     <Button
+    w="full"
       onClick={toggleColorMode}
       leftIcon={<SwitchIcon />}
       size="md"

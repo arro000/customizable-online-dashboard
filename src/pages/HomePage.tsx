@@ -66,7 +66,7 @@ const App: React.FC = () => {
     });
   };
 
-  const renderWidget = (item: WidgetConfig) => {
+  const renderWidget = (item: WidgetConfig, draggableHandle?:any) => {
     const WidgetComponent = (Components as any)[item.component];
     if (!WidgetComponent) {
       console.error(`Widget component ${item.component} not found`);
@@ -77,6 +77,7 @@ const App: React.FC = () => {
         key={item.id}
         id={item.id}
         editMode={editMode}
+        draggableHandle={draggableHandle}
         {...item.props}
       />
     );
@@ -89,23 +90,7 @@ const App: React.FC = () => {
   return (
     <ChakraProvider>
       <Box h="100%">
-        <Flex direction="row" justifyContent="flex-end" wrap="wrap" gap={5} mb={4}>
-          <BackgroundSelector editMode={editMode} />
 
-          {editMode && (
-            <>
-              <ColorModeButton />
-              <WidgetManager onAddWidget={addWidget} />
-              <Button onClick={resetWidgetState} rightIcon={<FaTimesCircle />}>
-                Reset Widgets
-              </Button>
-              <Select value={layoutType} onChange={handleLayoutChange}>
-                <option value="grid">Grid Layout</option>
-                <option value="flex">Flex Layout</option>
-              </Select>
-            </>
-          )}
-        </Flex>
         <VStack align="stretch">
           {layoutType === "grid" ? (
             <GridLayout
@@ -130,7 +115,31 @@ const App: React.FC = () => {
           )}
         </VStack>
       </Box>
-      <EditModeToggleButton editMode={editMode} setEditMode={setEditMode} />
+<VStack
+  position="fixed"
+  direction="column"
+  width="200px"
+  bottom="10"
+  right="10"
+  spacing={4}
+>
+  <VStack spacing={4} display={editMode ? "flex" : "none"}>
+    <ColorModeButton />
+    <WidgetManager onAddWidget={addWidget} />
+    <Button onClick={resetWidgetState} w="full" rightIcon={<FaTimesCircle />}>
+      Reset Widgets
+    </Button>
+    <Select value={layoutType} onChange={handleLayoutChange}>
+      <option value="grid">Grid Layout</option>
+      <option value="flex">Flex Layout</option>
+    </Select>
+  </VStack>
+  <BackgroundSelector editMode={editMode} />
+  <Flex justifyContent="flex-end" mt={4} w="full">
+    <EditModeToggleButton editMode={editMode} setEditMode={setEditMode} />
+  </Flex>
+</VStack>
+
     </ChakraProvider>
   );
 };

@@ -43,7 +43,7 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
   return (
     <>
       {editMode && (
-        <Button onClick={onOpen} mb={4}>
+        <Button onClick={onOpen} w="full">
           {selectedBackground}
         </Button>
       )}

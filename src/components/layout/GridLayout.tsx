@@ -20,7 +20,7 @@ interface GridLayoutProps {
   editMode: boolean;
   widgets: WidgetConfig[];
   setWidgets: React.Dispatch<React.SetStateAction<WidgetConfig[]>>;
-  renderWidget: (item: WidgetConfig) => React.ReactNode;
+  renderWidget: (item: WidgetConfig, draggableHandle?:any) => React.ReactNode;
   onDeleteWidget: (id: string) => void;
 }
 
@@ -102,8 +102,7 @@ const GridLayout: React.FC<GridLayoutProps> = ({
         width={width}
         cols={100 * (width / 800)}
         compactType={null}
-        isResizable={editMode}
-        isDraggable={editMode}
+       isResizable={editMode}
         resizeHandles={["s", "w", "e", "n", "sw", "nw", "se", "ne"]}
         draggableHandle=".react-grid-drag-handle"
         preventCollision={true}
@@ -113,11 +112,11 @@ const GridLayout: React.FC<GridLayoutProps> = ({
           <Flex
             key={item.i}
             position="relative"
-            bg={editMode ? "gray.800" : "none"}
+            
             borderRadius="lg"
             overflow="hidden"
             direction="column"
-            p={editMode ? 2 : 0}
+            
             zIndex={1}
             style={
               fullscreenWidget === item.i
@@ -136,36 +135,15 @@ const GridLayout: React.FC<GridLayoutProps> = ({
           >
             {editMode && (
               <Flex
+bg="gray.800"
+p="2"
                 alignContent="center"
                 alignItems="center"
                 justifyContent="space-between"
                 p={1}
                 color="red.500"
               >
-                <Flex>
-                  <Flex
-                    width="20px"
-                    height="20px"
-                    mr={1}
-                    position="absolutes"
-                    zIndex={10}
-                    className="react-grid-drag-handle"
-                    cursor={draggableWidgets[item.i] ? "move" : "not-allowed"}
-                    {...(draggableWidgets[item.i]
-                      ? InternalGridLayout.draggableHandle
-                      : {})}
-                  >
-                    <DragHandleIcon />
-                    <DragHandleIcon />
-                    <DragHandleIcon />
-                    <DragHandleIcon />
-                    <DragHandleIcon />
-                    <DragHandleIcon />
-                    <DragHandleIcon />
-                    <DragHandleIcon />
-                    <DragHandleIcon />
-                  </Flex>
-                </Flex>
+                
                 <Flex>
                   <IconButton
                     icon={<ExternalLinkIcon />}
@@ -203,7 +181,7 @@ const GridLayout: React.FC<GridLayoutProps> = ({
                 </Flex>
               </Flex>
             )}
-            <Box flexGrow={1}> {renderWidget(item)}</Box>
+            <Box flexGrow={1}> {renderWidget(item, )}</Box>
           </Flex>
         ))}
       </InternalGridLayout>

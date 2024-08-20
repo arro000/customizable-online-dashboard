@@ -1,24 +1,26 @@
 import React from "react";
 import {
   Box,
-  IconButton,
+  IconButton,Flex,
   useMediaQuery,
   Fade,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { EditIcon, CloseIcon } from "@chakra-ui/icons";
+import { EditIcon, CloseIcon ,ArrowForwardIcon} from "@chakra-ui/icons";
 import { useLocalStorage } from "../lib/useLocalStorage";
 
 interface WidgetProps {
   children: React.ReactNode;
-  settings?: React.ReactNode;
+  settings?: React.ReactNode
   widgetId: string;
+  draggableHandle ?:any
 }
 
 const WidgetBase: React.FC<WidgetProps> = ({
   children,
   settings,
   widgetId,
+  draggableHandle,
   ...rest
 }) => {
   const [isEditMode, setIsEditMode] = useLocalStorage(
@@ -68,13 +70,12 @@ const WidgetBase: React.FC<WidgetProps> = ({
         )}
       </Fade>
       <Fade in={isMobile || isHovered}>
-        <IconButton
-          icon={isEditMode ? <CloseIcon /> : <EditIcon />}
-          aria-label={isEditMode ? "Close settings" : "Edit widget"}
-          onClick={toggleEditMode}
-          position="absolute"
+      <Flex gap={2}position="absolute"
           right={2}
-          bottom={2}
+          bottom={2}>
+       <IconButton
+          icon={ <ArrowForwardIcon />}
+          className="react-grid-drag-handle"
           size="sm"
           colorScheme={isEditMode ? "red" : "blue"}
           variant="solid"
@@ -82,6 +83,20 @@ const WidgetBase: React.FC<WidgetProps> = ({
           boxShadow="md"
           zIndex={4}
         />
+        {JSON.stringify(draggableHandle)}
+        <IconButton
+          icon={isEditMode ? <CloseIcon /> : <EditIcon />}
+          aria-label={isEditMode ? "Close settings" : "Edit widget"}
+          onClick={toggleEditMode}
+          
+          size="sm"
+          colorScheme={isEditMode ? "red" : "blue"}
+          variant="solid"
+          borderRadius="full"
+          boxShadow="md"
+          zIndex={4}
+        />
+        </Flex>
       </Fade>
     </Box>
   );

@@ -46,7 +46,7 @@ const WidgetManager: React.FC<WidgetManagerProps> = ({ onAddWidget }) => {
 
   return (
     <>
-      <Button onClick={openModal}>Aggiungi Widget</Button>
+      <Button w="full" onClick={openModal}>Aggiungi Widget</Button>
 
       <Modal isOpen={isOpen} onClose={closeModal}>
         <ModalOverlay />

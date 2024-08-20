@@ -38,11 +38,7 @@ export const EditModeToggleButton: React.FC<EditModeToggleButtonProps> = ({
 
   return (
     <MotionIconButton
-      position="fixed"
-      height="60px"
-      width="60px"
-      bottom="10"
-      right="10"
+      
       fontSize="30px"
       icon={<SettingsIcon />}
       onClick={() => setEditMode(!editMode)}
