@@ -138,7 +138,7 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
   }
 
   return (
-    <Box p={4} overflow="auto">
+    <Box p={4} overflow="auto" width={config.w} h={config.h}>
       <VStack align="stretch" spacing={4}>
         <HStack justifyContent="space-between">
           <Text fontSize="xl" fontWeight="bold">
