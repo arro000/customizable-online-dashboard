@@ -1,19 +1,20 @@
 import React from "react";
 import {
   Box,
-  IconButton,Flex,
+  IconButton,
+  Flex,
   useMediaQuery,
   Fade,
   useColorModeValue,
 } from "@chakra-ui/react";
-import { EditIcon, CloseIcon ,ArrowForwardIcon} from "@chakra-ui/icons";
+import { EditIcon, CloseIcon, ArrowForwardIcon } from "@chakra-ui/icons";
 import { useLocalStorage } from "../lib/useLocalStorage";
 
 interface WidgetProps {
   children: React.ReactNode;
-  settings?: React.ReactNode
+  settings?: React.ReactNode;
   widgetId: string;
-  draggableHandle ?:any
+  draggableHandle?: any;
 }
 
 const WidgetBase: React.FC<WidgetProps> = ({
@@ -70,32 +71,29 @@ const WidgetBase: React.FC<WidgetProps> = ({
         )}
       </Fade>
       <Fade in={isMobile || isHovered}>
-      <Flex gap={2}position="absolute"
-          right={2}
-          bottom={2}>
-       <IconButton
-          icon={ <ArrowForwardIcon />}
-          className="react-grid-drag-handle"
-          size="sm"
-          colorScheme={isEditMode ? "red" : "blue"}
-          variant="solid"
-          borderRadius="full"
-          boxShadow="md"
-          zIndex={4}
-        />
-        {JSON.stringify(draggableHandle)}
-        <IconButton
-          icon={isEditMode ? <CloseIcon /> : <EditIcon />}
-          aria-label={isEditMode ? "Close settings" : "Edit widget"}
-          onClick={toggleEditMode}
-          
-          size="sm"
-          colorScheme={isEditMode ? "red" : "blue"}
-          variant="solid"
-          borderRadius="full"
-          boxShadow="md"
-          zIndex={4}
-        />
+        <Flex gap={2} position="fixed" right={2} bottom={2}>
+          <IconButton
+            icon={<ArrowForwardIcon />}
+            className="react-grid-drag-handle"
+            size="sm"
+            colorScheme={isEditMode ? "red" : "blue"}
+            variant="solid"
+            borderRadius="full"
+            boxShadow="md"
+            zIndex={4}
+          />
+          {JSON.stringify(draggableHandle)}
+          <IconButton
+            icon={isEditMode ? <CloseIcon /> : <EditIcon />}
+            aria-label={isEditMode ? "Close settings" : "Edit widget"}
+            onClick={toggleEditMode}
+            size="sm"
+            colorScheme={isEditMode ? "red" : "blue"}
+            variant="solid"
+            borderRadius="full"
+            boxShadow="md"
+            zIndex={4}
+          />
         </Flex>
       </Fade>
     </Box>

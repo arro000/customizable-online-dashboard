@@ -25,6 +25,7 @@ import {
 import { RepeatIcon, SettingsIcon } from "@chakra-ui/icons";
 import withWidgetBase from "../hooks/withWidgetBase";
 import { WidgetConfig, WidgetProps } from "../../interfaces/widget";
+import DOMPurify from "dompurify";
 
 interface FeedItem {
   title: string;
@@ -137,7 +138,7 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
   }
 
   return (
-    <Box p={4}>
+    <Box p={4} overflow="auto">
       <VStack align="stretch" spacing={4}>
         <HStack justifyContent="space-between">
           <Text fontSize="xl" fontWeight="bold">
@@ -193,18 +194,15 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
                   />
                 )}
                 <Box p={3}>
-                  <Link
-                    href={item.link}
-                    isExternal
-                    color="blue.600"
-                    fontWeight="medium"
-                  >
+                  <Link href={item.link} isExternal fontWeight="medium">
                     <Text noOfLines={2}>{item.title}</Text>
                   </Link>
                   {config.showDescriptions && (
-                    <Text fontSize="sm" color="gray.600" mt={2} noOfLines={3}>
-                      {item.description}
-                    </Text>
+                    <div
+                      dangerouslySetInnerHTML={DOMPurify.sanitize(
+                        item.description
+                      )}
+                    />
                   )}
                   <Text fontSize="xs" color="gray.500" mt={2}>
                     {new Date(item.pubDate).toLocaleString()}
