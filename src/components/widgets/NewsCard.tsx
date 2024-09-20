@@ -1,20 +1,23 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
-  Box,
-  Text,
-  VStack,
   Input,
   Button,
   UnorderedList,
-  ListItem,
+  useToast,
+  Box,
+  VStack,
+  HStack,
+  Text,
   Link,
   IconButton,
   Spinner,
-  HStack,
-  useColorModeValue,
+  List,
+  ListItem,
+  Divider,
 } from "@chakra-ui/react";
-import { SettingsIcon, RepeatIcon } from "@chakra-ui/icons";
-import WidgetBase from "../WidgetBase";
+import { ExternalLinkIcon, RepeatIcon } from "@chakra-ui/icons";
+import withWidgetBase from "../hooks/withWidgetBase";
+import { WidgetConfig, WidgetProps } from "../../interfaces/widget";
 
 interface FeedItem {
   title: string;
@@ -22,46 +25,38 @@ interface FeedItem {
   pubDate: string;
 }
 
-const NewsCard: React.FC = () => {
-  const [feeds, setFeeds] = useState<string[]>([]);
-  const [newFeed, setNewFeed] = useState("");
+interface NewsCardConfig extends WidgetConfig {
+  feeds: string[];
+  refreshInterval: number;
+}
+
+const defaultConfig: NewsCardConfig = {
+  feeds: [],
+  refreshInterval: 300000,
+  id: "",
+  i: "",
+  x: 0,
+  y: 0,
+  w: 0,
+  h: 0,
+  component: "NewsCard",
+};
+
+const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
+  config,
+  onConfigChange,
+}) => {
   const [news, setNews] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showSettings, setShowSettings] = useState(false);
-
-  useEffect(() => {
-    const savedFeeds = localStorage.getItem("rssFeeds");
-    if (savedFeeds) {
-      const parsedFeeds = JSON.parse(savedFeeds);
-      setFeeds(parsedFeeds);
-      fetchAllFeeds(parsedFeeds);
-    }
-  }, []);
-
-  const addFeed = () => {
-    if (newFeed && !feeds.includes(newFeed)) {
-      const updatedFeeds = [...feeds, newFeed];
-      setFeeds(updatedFeeds);
-      setNewFeed("");
-      localStorage.setItem("rssFeeds", JSON.stringify(updatedFeeds));
-      fetchAllFeeds(updatedFeeds);
-    }
-  };
-
-  const removeFeed = (feedToRemove: string) => {
-    const updatedFeeds = feeds.filter((feed) => feed !== feedToRemove);
-    setFeeds(updatedFeeds);
-    localStorage.setItem("rssFeeds", JSON.stringify(updatedFeeds));
-    fetchAllFeeds(updatedFeeds);
-  };
+  const toast = useToast();
 
   const fetchFeed = async (url: string) => {
     const response = await fetch(
       `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`
     );
     if (!response.ok) {
-      throw new Error(`Errore nel recupero del feed: ${url}`);
+      throw new Error(`Error fetching feed: ${url}`);
     }
     const data = await response.json();
     return data.items.map((item: any) => ({
@@ -71,92 +66,198 @@ const NewsCard: React.FC = () => {
     }));
   };
 
-  const fetchAllFeeds = async (feedUrls: string[]) => {
+  const fetchAllFeeds = useCallback(async () => {
+    if (!config || config.feeds.length === 0) return;
+
     setLoading(true);
     setError("");
     try {
-      const allItems = await Promise.all(feedUrls.map(fetchFeed));
+      const allItems = await Promise.all(config.feeds.map(fetchFeed));
       const flattenedItems = allItems.flat();
       const sortedItems = flattenedItems.sort(
         (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
       );
       setNews(sortedItems.slice(0, 10));
     } catch (err) {
-      setError("Errore nel recupero dei feed. Verifica gli URL.");
+      setError("Error fetching feeds. Please check the URLs.");
+      toast({
+        title: "Error fetching feeds",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }, [config, toast]);
 
-  const refetchNews = () => {
-    fetchAllFeeds(feeds);
+  useEffect(() => {
+    fetchAllFeeds();
+    const interval = setInterval(fetchAllFeeds, config.refreshInterval);
+    return () => clearInterval(interval);
+  }, [config.feeds, config.refreshInterval, fetchAllFeeds]);
+
+  if (!config) {
+    return <Spinner />;
+  }
+
+  const handleRefresh = () => {
+    fetchAllFeeds();
+    toast({
+      title: "Refreshing feeds",
+      description: "Fetching the latest news...",
+      status: "info",
+      duration: 2000,
+      isClosable: true,
+    });
   };
 
   return (
-    <WidgetBase>
-      <HStack position="absolute" top={2} right={2}>
-        <IconButton
-          aria-label="Aggiorna notizie"
-          icon={<RepeatIcon />}
-          size="sm"
-          onClick={refetchNews}
-          isDisabled={loading}
-        />
-        <IconButton
-          aria-label="Impostazioni"
-          icon={<SettingsIcon />}
-          size="sm"
-          onClick={() => setShowSettings(!showSettings)}
-        />
-      </HStack>
-      <VStack align="start" spacing={4}>
-        <Text fontSize="xl" fontWeight="bold">
-          Notizie RSS
-        </Text>
-        {showSettings ? (
-          <>
-            <Input
-              placeholder="Aggiungi un nuovo feed RSS"
-              value={newFeed}
-              onChange={(e) => setNewFeed(e.target.value)}
-            />
-            <Button onClick={addFeed} isDisabled={loading}>
-              Aggiungi Feed
-            </Button>
-            <Text fontWeight="bold">Feed attivi:</Text>
-            <UnorderedList>
-              {feeds.map((feed, index) => (
-                <ListItem key={index}>
-                  {feed}
-                  <Button size="xs" ml={2} onClick={() => removeFeed(feed)}>
-                    Rimuovi
-                  </Button>
-                </ListItem>
-              ))}
-            </UnorderedList>
-          </>
-        ) : (
-          <>
-            {loading && <Spinner />}
-            {error && <Text color="red.500">{error}</Text>}
-            {news.length > 0 ? (
-              <UnorderedList>
-                {news.map((item, index) => (
-                  <ListItem key={index}>
-                    <Link href={item.link} isExternal>
+    <Box
+      borderWidth="1px"
+      borderRadius="lg"
+      overflow="hidden"
+      boxShadow="md"
+      bg="white"
+      p={4}
+    >
+      <VStack align="stretch" spacing={4}>
+        <HStack justifyContent="space-between">
+          <Text fontSize="xl" fontWeight="bold">
+            RSS News Feed
+          </Text>
+          <IconButton
+            aria-label="Refresh news"
+            icon={<RepeatIcon />}
+            onClick={handleRefresh}
+            isDisabled={loading}
+            size="sm"
+          />
+        </HStack>
+
+        <Divider />
+
+        {loading && (
+          <Box textAlign="center" py={4}>
+            <Spinner size="lg" />
+          </Box>
+        )}
+
+        {error && (
+          <Box bg="red.100" color="red.700" p={3} borderRadius="md">
+            <Text>{error}</Text>
+          </Box>
+        )}
+
+        {!loading && !error && news.length === 0 && (
+          <Box textAlign="center" py={4}>
+            <Text>
+              No news available. Try adding some RSS feeds in the settings.
+            </Text>
+          </Box>
+        )}
+
+        {!loading && !error && news.length > 0 && (
+          <List spacing={3}>
+            {news.map((item, index) => (
+              <ListItem key={index}>
+                <HStack alignItems="flex-start">
+                  <ExternalLinkIcon mt={1} />
+                  <VStack align="start" spacing={0}>
+                    <Link
+                      href={item.link}
+                      isExternal
+                      color="blue.600"
+                      fontWeight="medium"
+                    >
                       {item.title}
                     </Link>
-                  </ListItem>
-                ))}
-              </UnorderedList>
-            ) : (
-              <Text>Nessuna notizia disponibile</Text>
-            )}
-          </>
+                    <Text fontSize="sm" color="gray.500">
+                      {new Date(item.pubDate).toLocaleString()}
+                    </Text>
+                  </VStack>
+                </HStack>
+              </ListItem>
+            ))}
+          </List>
         )}
       </VStack>
-    </WidgetBase>
+    </Box>
   );
 };
+
+const NewsCardOptions: React.FC<WidgetProps<NewsCardConfig>> = ({
+  config,
+  onConfigChange,
+}) => {
+  const [newFeed, setNewFeed] = useState("");
+  const toast = useToast();
+
+  if (!config) {
+    return <Spinner />;
+  }
+
+  const addFeed = () => {
+    if (newFeed && !config.feeds.includes(newFeed)) {
+      const updatedFeeds = [...config.feeds, newFeed];
+      onConfigChange({ feeds: updatedFeeds });
+      setNewFeed("");
+      toast({
+        title: "Feed added",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const removeFeed = (feedToRemove: string) => {
+    const updatedFeeds = config.feeds.filter((feed) => feed !== feedToRemove);
+    onConfigChange({ feeds: updatedFeeds });
+    toast({
+      title: "Feed removed",
+      status: "info",
+      duration: 2000,
+      isClosable: true,
+    });
+  };
+
+  return (
+    <VStack align="start" spacing={4}>
+      <Text fontWeight="bold">RSS Feeds:</Text>
+      <Input
+        placeholder="Add a new RSS feed URL"
+        value={newFeed}
+        onChange={(e) => setNewFeed(e.target.value)}
+      />
+      <Button onClick={addFeed}>Add Feed</Button>
+      <UnorderedList>
+        {config.feeds.map((feed, index) => (
+          <ListItem key={index}>
+            {feed}
+            <Button size="xs" ml={2} onClick={() => removeFeed(feed)}>
+              Remove
+            </Button>
+          </ListItem>
+        ))}
+      </UnorderedList>
+      <Text fontWeight="bold">Refresh Interval (ms):</Text>
+      <Input
+        type="number"
+        value={config.refreshInterval}
+        onChange={(e) =>
+          onConfigChange({ refreshInterval: Number(e.target.value) })
+        }
+        min={5000}
+      />
+    </VStack>
+  );
+};
+
+const NewsCard = withWidgetBase<NewsCardConfig>({
+  renderWidget: (props) => <NewsCardContent {...props} />,
+  renderOptions: (props) => <NewsCardOptions {...props} />,
+  defaultConfig,
+});
 
 export default NewsCard;

@@ -20,7 +20,7 @@ interface GridLayoutProps {
   editMode: boolean;
   widgets: WidgetConfig[];
   setWidgets: React.Dispatch<React.SetStateAction<WidgetConfig[]>>;
-  renderWidget: (item: WidgetConfig, draggableHandle?:any) => React.ReactNode;
+  renderWidget: (item: WidgetConfig, draggableHandle?: any) => React.ReactNode;
   onDeleteWidget: (id: string) => void;
 }
 
@@ -102,7 +102,7 @@ const GridLayout: React.FC<GridLayoutProps> = ({
         width={width}
         cols={100 * (width / 800)}
         compactType={null}
-       isResizable={editMode}
+        isResizable={editMode}
         resizeHandles={["s", "w", "e", "n", "sw", "nw", "se", "ne"]}
         draggableHandle=".react-grid-drag-handle"
         preventCollision={true}
@@ -112,11 +112,9 @@ const GridLayout: React.FC<GridLayoutProps> = ({
           <Flex
             key={item.i}
             position="relative"
-            
             borderRadius="lg"
             overflow="hidden"
             direction="column"
-            
             zIndex={1}
             style={
               fullscreenWidget === item.i
@@ -135,15 +133,14 @@ const GridLayout: React.FC<GridLayoutProps> = ({
           >
             {editMode && (
               <Flex
-bg="gray.800"
-p="2"
+                bg="gray.800"
+                p="2"
                 alignContent="center"
                 alignItems="center"
                 justifyContent="space-between"
                 p={1}
                 color="red.500"
               >
-                
                 <Flex>
                   <IconButton
                     icon={<ExternalLinkIcon />}
@@ -181,7 +178,7 @@ p="2"
                 </Flex>
               </Flex>
             )}
-            <Box flexGrow={1}> {renderWidget(item, )}</Box>
+            <Box flexGrow={1}> {renderWidget(item)}</Box>
           </Flex>
         ))}
       </InternalGridLayout>
