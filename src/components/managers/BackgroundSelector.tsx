@@ -43,7 +43,7 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
   return (
     <>
       {editMode && (
-        <Button onClick={onOpen} w="full">
+        <Button onClick={onOpen} w="full" zIndex={9999}>
           {selectedBackground}
         </Button>
       )}
@@ -54,7 +54,10 @@ const BackgroundSelector: React.FC<BackgroundSelectorProps> = ({
           <ModalCloseButton />
           <ModalBody>
             <VStack spacing={4} align="stretch">
-              <Select value={selectedBackground} onChange={handleBackgroundChange}>
+              <Select
+                value={selectedBackground}
+                onChange={handleBackgroundChange}
+              >
                 {Object.keys(Backgrounds).map((bg) => (
                   <option key={bg} value={bg}>
                     {bg}

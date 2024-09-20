@@ -1,21 +1,28 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
-  Input,
-  Button,
-  UnorderedList,
-  useToast,
   Box,
   VStack,
   HStack,
   Text,
   Link,
+  Image,
   IconButton,
   Spinner,
-  List,
-  ListItem,
+  SimpleGrid,
   Divider,
+  useToast,
+  Switch,
+  FormControl,
+  FormLabel,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
+  Input,
+  Button,
 } from "@chakra-ui/react";
-import { ExternalLinkIcon, RepeatIcon } from "@chakra-ui/icons";
+import { RepeatIcon, SettingsIcon } from "@chakra-ui/icons";
 import withWidgetBase from "../hooks/withWidgetBase";
 import { WidgetConfig, WidgetProps } from "../../interfaces/widget";
 
@@ -23,16 +30,24 @@ interface FeedItem {
   title: string;
   link: string;
   pubDate: string;
+  description: string;
+  thumbnail: string;
 }
 
 interface NewsCardConfig extends WidgetConfig {
   feeds: string[];
   refreshInterval: number;
+  showImages: boolean;
+  showDescriptions: boolean;
+  maxItems: number;
 }
 
 const defaultConfig: NewsCardConfig = {
   feeds: [],
-  refreshInterval: 300000,
+  refreshInterval: 300000, // 5 minutes
+  showImages: true,
+  showDescriptions: true,
+  maxItems: 6,
   id: "",
   i: "",
   x: 0,
@@ -63,11 +78,16 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
       title: item.title,
       link: item.link,
       pubDate: new Date(item.pubDate).toISOString(),
+      description: item.description,
+      thumbnail: item.thumbnail,
     }));
   };
 
   const fetchAllFeeds = useCallback(async () => {
-    if (!config || config.feeds.length === 0) return;
+    if (!config || config.feeds.length === 0) {
+      setNews([]);
+      return;
+    }
 
     setLoading(true);
     setError("");
@@ -77,13 +97,14 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
       const sortedItems = flattenedItems.sort(
         (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
       );
-      setNews(sortedItems.slice(0, 20));
+      setNews(sortedItems.slice(0, config.maxItems));
     } catch (err) {
       setError("Error fetching feeds. Please check the URLs.");
       toast({
         title: "Error fetching feeds",
+        description: "Please check your feed URLs and try again.",
         status: "error",
-        duration: 3000,
+        duration: 5000,
         isClosable: true,
       });
     } finally {
@@ -93,13 +114,12 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
 
   useEffect(() => {
     fetchAllFeeds();
-    const interval = setInterval(fetchAllFeeds, config.refreshInterval);
+    const interval = setInterval(
+      fetchAllFeeds,
+      config?.refreshInterval || 300000
+    );
     return () => clearInterval(interval);
-  }, [config.feeds, config.refreshInterval, fetchAllFeeds]);
-
-  if (!config) {
-    return <Spinner />;
-  }
+  }, [config?.feeds, config?.refreshInterval, fetchAllFeeds]);
 
   const handleRefresh = () => {
     fetchAllFeeds();
@@ -112,14 +132,12 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
     });
   };
 
+  if (!config) {
+    return <Spinner size="xl" />;
+  }
+
   return (
-    <Box
-      borderWidth="1px"
-      borderRadius="lg"
-      overflow="hidden"
-      boxShadow="md"
-      p={4}
-    >
+    <Box p={4}>
       <VStack align="stretch" spacing={4}>
         <HStack justifyContent="space-between">
           <Text fontSize="xl" fontWeight="bold">
@@ -157,23 +175,44 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
         )}
 
         {!loading && !error && news.length > 0 && (
-          <List spacing={3}>
+          <SimpleGrid columns={[1, 2, 3]} spacing={4}>
             {news.map((item, index) => (
-              <ListItem key={index}>
-                <HStack alignItems="flex-start">
-                  <ExternalLinkIcon mt={1} />
-                  <VStack align="start" spacing={0}>
-                    <Link href={item.link} isExternal fontWeight="medium">
-                      {item.title}
-                    </Link>
-                    <Text fontSize="sm" color="gray.500">
-                      {new Date(item.pubDate).toLocaleString()}
+              <Box
+                key={index}
+                borderWidth="1px"
+                borderRadius="md"
+                overflow="hidden"
+              >
+                {config.showImages && item.thumbnail && (
+                  <Image
+                    src={item.thumbnail}
+                    alt={item.title}
+                    objectFit="cover"
+                    height="150px"
+                    width="100%"
+                  />
+                )}
+                <Box p={3}>
+                  <Link
+                    href={item.link}
+                    isExternal
+                    color="blue.600"
+                    fontWeight="medium"
+                  >
+                    <Text noOfLines={2}>{item.title}</Text>
+                  </Link>
+                  {config.showDescriptions && (
+                    <Text fontSize="sm" color="gray.600" mt={2} noOfLines={3}>
+                      {item.description}
                     </Text>
-                  </VStack>
-                </HStack>
-              </ListItem>
+                  )}
+                  <Text fontSize="xs" color="gray.500" mt={2}>
+                    {new Date(item.pubDate).toLocaleString()}
+                  </Text>
+                </Box>
+              </Box>
             ))}
-          </List>
+          </SimpleGrid>
         )}
       </VStack>
     </Box>
@@ -218,32 +257,85 @@ const NewsCardOptions: React.FC<WidgetProps<NewsCardConfig>> = ({
 
   return (
     <VStack align="start" spacing={4}>
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-images" mb="0">
+          Show Images
+        </FormLabel>
+        <Switch
+          id="show-images"
+          isChecked={config.showImages}
+          onChange={(e) => onConfigChange({ showImages: e.target.checked })}
+        />
+      </FormControl>
+
+      <FormControl display="flex" alignItems="center">
+        <FormLabel htmlFor="show-descriptions" mb="0">
+          Show Descriptions
+        </FormLabel>
+        <Switch
+          id="show-descriptions"
+          isChecked={config.showDescriptions}
+          onChange={(e) =>
+            onConfigChange({ showDescriptions: e.target.checked })
+          }
+        />
+      </FormControl>
+
+      <FormControl>
+        <FormLabel htmlFor="max-items">Max Items</FormLabel>
+        <NumberInput
+          id="max-items"
+          value={config.maxItems}
+          onChange={(_, value) => onConfigChange({ maxItems: value })}
+          min={1}
+          max={20}
+        >
+          <NumberInputField />
+          <NumberInputStepper>
+            <NumberIncrementStepper />
+            <NumberDecrementStepper />
+          </NumberInputStepper>
+        </NumberInput>
+      </FormControl>
+
+      <FormControl>
+        <FormLabel htmlFor="refresh-interval">Refresh Interval (ms)</FormLabel>
+        <NumberInput
+          id="refresh-interval"
+          value={config.refreshInterval}
+          onChange={(_, value) => onConfigChange({ refreshInterval: value })}
+          min={5000}
+          step={1000}
+        >
+          <NumberInputField />
+          <NumberInputStepper>
+            <NumberIncrementStepper />
+            <NumberDecrementStepper />
+          </NumberInputStepper>
+        </NumberInput>
+      </FormControl>
+
+      <Divider />
+
       <Text fontWeight="bold">RSS Feeds:</Text>
-      <Input
-        placeholder="Add a new RSS feed URL"
-        value={newFeed}
-        onChange={(e) => setNewFeed(e.target.value)}
-      />
-      <Button onClick={addFeed}>Add Feed</Button>
-      <UnorderedList>
+      <VStack align="stretch" width="100%">
+        <HStack>
+          <Input
+            placeholder="Add a new RSS feed URL"
+            value={newFeed}
+            onChange={(e) => setNewFeed(e.target.value)}
+          />
+          <Button onClick={addFeed}>Add</Button>
+        </HStack>
         {config.feeds.map((feed, index) => (
-          <ListItem key={index}>
-            {feed}
-            <Button size="xs" ml={2} onClick={() => removeFeed(feed)}>
+          <HStack key={index} justifyContent="space-between">
+            <Text isTruncated>{feed}</Text>
+            <Button size="sm" onClick={() => removeFeed(feed)}>
               Remove
             </Button>
-          </ListItem>
+          </HStack>
         ))}
-      </UnorderedList>
-      <Text fontWeight="bold">Refresh Interval (ms):</Text>
-      <Input
-        type="number"
-        value={config.refreshInterval}
-        onChange={(e) =>
-          onConfigChange({ refreshInterval: Number(e.target.value) })
-        }
-        min={5000}
-      />
+      </VStack>
     </VStack>
   );
 };

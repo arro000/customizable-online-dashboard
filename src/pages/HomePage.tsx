@@ -129,7 +129,7 @@ const App: React.FC = () => {
         right="10"
         spacing={4}
       >
-        <VStack spacing={4} display={editMode ? "flex" : "none"}>
+        <VStack spacing={4} display={editMode ? "flex" : "none"} zIndex={9999}>
           <ColorModeButton />
           <WidgetManager onAddWidget={addWidget} />
           <Button
@@ -145,7 +145,7 @@ const App: React.FC = () => {
           </Select>
         </VStack>
         <BackgroundSelector editMode={editMode} />
-        <Flex justifyContent="flex-end" mt={4} w="full">
+        <Flex justifyContent="flex-end" mt={4} w="full" zIndex={9999}>
           <EditModeToggleButton editMode={editMode} setEditMode={setEditMode} />
         </Flex>
       </VStack>
