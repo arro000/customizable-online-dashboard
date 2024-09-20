@@ -77,7 +77,7 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
       const sortedItems = flattenedItems.sort(
         (a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
       );
-      setNews(sortedItems.slice(0, 10));
+      setNews(sortedItems.slice(0, 20));
     } catch (err) {
       setError("Error fetching feeds. Please check the URLs.");
       toast({
@@ -118,7 +118,6 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
       borderRadius="lg"
       overflow="hidden"
       boxShadow="md"
-      bg="white"
       p={4}
     >
       <VStack align="stretch" spacing={4}>
@@ -164,12 +163,7 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
                 <HStack alignItems="flex-start">
                   <ExternalLinkIcon mt={1} />
                   <VStack align="start" spacing={0}>
-                    <Link
-                      href={item.link}
-                      isExternal
-                      color="blue.600"
-                      fontWeight="medium"
-                    >
+                    <Link href={item.link} isExternal fontWeight="medium">
                       {item.title}
                     </Link>
                     <Text fontSize="sm" color="gray.500">
