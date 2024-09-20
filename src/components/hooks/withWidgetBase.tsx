@@ -40,7 +40,7 @@ function withWidgetBase<T extends WidgetConfig>({
     };
 
     const [widgetConfig, updateWidgetConfig] = useWidgetConfig(widgetProps);
-    console.log(widgetStyleConfig);
+
     return (
       <WidgetBase
         widgetId={id}

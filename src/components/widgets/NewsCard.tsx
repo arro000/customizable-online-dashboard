@@ -199,9 +199,9 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
                   </Link>
                   {config.showDescriptions && (
                     <div
-                      dangerouslySetInnerHTML={DOMPurify.sanitize(
-                        item.description
-                      )}
+                      dangerouslySetInnerHTML={{
+                        __html: DOMPurify.sanitize(item.description),
+                      }}
                     />
                   )}
                   <Text fontSize="xs" color="gray.500" mt={2}>

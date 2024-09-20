@@ -71,7 +71,7 @@ const WidgetBase: React.FC<WidgetProps> = ({
         )}
       </Fade>
       <Fade in={isMobile || isHovered}>
-        <Flex gap={2} position="fixed" right={2} bottom={2}>
+        <Flex gap={2} position="fixed" right={2} bottom={2} zIndex={99}>
           <IconButton
             icon={<ArrowForwardIcon />}
             className="react-grid-drag-handle"
