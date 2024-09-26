@@ -138,7 +138,6 @@ const GridLayout: React.FC<GridLayoutProps> = ({
                 alignContent="center"
                 alignItems="center"
                 justifyContent="space-between"
-                p={1}
                 color="red.500"
               >
                 <Flex>

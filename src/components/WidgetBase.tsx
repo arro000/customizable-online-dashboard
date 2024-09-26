@@ -81,8 +81,9 @@ const WidgetBase: React.FC<WidgetProps> = ({
             borderRadius="full"
             boxShadow="md"
             zIndex={4}
+            aria-label="Move widget"
           />
-          {JSON.stringify(draggableHandle)}
+
           <IconButton
             icon={isEditMode ? <CloseIcon /> : <EditIcon />}
             aria-label={isEditMode ? "Close settings" : "Edit widget"}

@@ -66,7 +66,6 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const toast = useToast();
-
   const fetchFeed = async (url: string) => {
     const response = await fetch(
       `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`
@@ -138,7 +137,7 @@ const NewsCardContent: React.FC<WidgetProps<NewsCardConfig>> = ({
   }
 
   return (
-    <Box p={4} overflow="auto" width={config.w} h={config.h}>
+    <Box p={4}>
       <VStack align="stretch" spacing={4}>
         <HStack justifyContent="space-between">
           <Text fontSize="xl" fontWeight="bold">
